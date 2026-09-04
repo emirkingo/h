@@ -2371,9 +2371,10 @@
                     <div style="font-family:Arial, sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#f9d98b; margin-bottom:12px;">CHEST OPENING</div>
                     <div style="display:flex; align-items:center; justify-content:center; position:relative; margin:18px auto; width:220px; height:220px;">
                       <div id="chest-spin-ring" style="width:200px; height:200px; border-radius:50%; border:10px solid #f9d98b; background:conic-gradient(from 0deg, #ffb703, #f77f00, #ffcb77, #ffb703, #f77f00, #ffcb77, #ffb703); box-shadow: inset 0 0 25px rgba(255,255,255,0.2), 0 0 30px rgba(255,180,58,0.35); position:absolute; transform:rotate(0deg); transition:transform 4.2s cubic-bezier(0.12, 0.86, 0.19, 1);"></div>
-                      <div style="position:absolute; width:56px; height:56px; background:#1c1009; border:4px solid #f9d98b; border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 18px rgba(255,215,107,0.35);">
-                        <i class="fa-solid fa-gem" style="color:#ffe39a; font-size:24px;"></i>
-                      </div>
+                                            <div id="chest-spin-reel-window" style="width:286px; height:118px; position:absolute; overflow:hidden; border:4px solid #f9d98b; border-radius:16px; background:linear-gradient(180deg,rgba(20,10,4,.98),rgba(58,28,8,.98)); box-shadow:0 0 22px rgba(255,184,55,.45), inset 0 0 18px rgba(0,0,0,.7);">
+                                                <div id="chest-spin-reel-track" style="height:100%; display:flex; align-items:center; gap:8px; padding:0 101px; transform:translateX(0); transition:transform 4.2s cubic-bezier(0.08,0.82,0.16,1);"></div>
+                                                <div style="position:absolute; left:50%; top:-4px; bottom:-4px; width:3px; transform:translateX(-50%); background:#fff2a8; box-shadow:0 0 12px #ffd35a; pointer-events:none;"></div>
+                                            </div>
                     </div>
                     <div id="chest-spin-text" style="font-family:Arial, sans-serif; font-weight:700; font-size:17px; color:#fff5d6; min-height:26px; margin-top:8px;">Şanslı ödül hazırlanıyor...</div>
                     <div id="chest-spin-candidates" style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; min-height:42px; margin:8px auto 2px; max-width:360px;"></div>
@@ -2398,6 +2399,7 @@
             const textEl = overlay.querySelector('#chest-spin-text');
             const rewardEl = overlay.querySelector('#chest-spin-reward');
             const candidatesEl = overlay.querySelector('#chest-spin-candidates');
+            const reelTrack = overlay.querySelector('#chest-spin-reel-track');
             const closeBtn = overlay.querySelector('#chest-spin-close');
 
             const candidates = (chest.rewardPool || []).map(id => REAL_SKINS.find(item => item.id === id)).filter(Boolean);
@@ -2408,6 +2410,20 @@
                 if (!item.generated) return;
                 const canvas = candidatesEl.querySelector(`[data-candidate-index="${index}"]`);
                 if (canvas) drawGeneratedSkin(canvas.getContext('2d'), 21, 21, item.id, _animFrame, .26);
+            });
+            const rewardIndex = Math.max(0, candidates.findIndex(item => item.id === reward.id));
+            const reelItems = [...Array.from({ length: 4 }, () => candidates).flat(), reward];
+            reelTrack.innerHTML = '';
+            reelItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'flex:0 0 84px;height:92px;border:2px solid rgba(255,220,140,.42);border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.34));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;';
+                if (item.generated) {
+                    const canvas = document.createElement('canvas'); canvas.width = 72; canvas.height = 72; drawGeneratedSkin(canvas.getContext('2d'), 36, 36, item.id, _animFrame, .52); card.appendChild(canvas);
+                } else {
+                    const image = document.createElement('img'); image.src = item.img; image.alt = item.name; image.style.cssText = 'width:72px;height:72px;object-fit:contain;'; card.appendChild(image);
+                }
+                const label = document.createElement('span'); label.textContent = item.name; label.style.cssText = 'position:absolute;bottom:2px;left:2px;right:2px;font:700 8px Arial;color:#fff2c4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; card.appendChild(label);
+                reelTrack.appendChild(card);
             });
 
             const rewardImg = reward.generated ? document.createElement('canvas') : document.createElement('img');
@@ -2429,9 +2445,16 @@
             overlay.style.display = 'flex';
             closeBtn.style.display = 'none';
             ring.style.transform = 'rotate(0deg)';
+            reelTrack.style.transition = 'none';
+            reelTrack.style.transform = 'translateX(0)';
+            void reelTrack.offsetWidth;
+            const targetIndex = candidates.length * 4 + rewardIndex;
+            const reelOffset = targetIndex * 92;
+            reelTrack.style.transition = 'transform 4.2s cubic-bezier(0.08,0.82,0.16,1)';
+            requestAnimationFrame(() => { reelTrack.style.transform = `translateX(-${reelOffset}px)`; });
             let candidateIndex = 0;
             const candidateTimer = setInterval(() => {
-                const candidateImages = candidatesEl.querySelectorAll('img');
+                const candidateImages = candidatesEl.querySelectorAll('[data-candidate-index]');
                 candidateImages.forEach((image, index) => { image.style.borderColor = index === candidateIndex ? '#fff2ad' : 'rgba(255,220,140,.45)'; image.style.transform = index === candidateIndex ? 'scale(1.18)' : 'scale(1)'; });
                 candidateIndex = (candidateIndex + 1) % Math.max(1, candidateImages.length);
             }, 95);
