@@ -903,12 +903,15 @@
                     <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-700 border-2 border-black flex items-center justify-center shadow-inner overflow-hidden">
                         <img id="prof-avatar-img" src="players/wolf.png" class="w-12 h-12 object-contain" alt="Avatar">
                     </div>
-                    <div class="flex flex-col flex-1">
+                    <div class="flex flex-col flex-1 min-w-0">
                         <span id="prof-username" class="font-io text-lg text-white stroke-text leading-tight">Gölge_Avcısı</span>
+                        <div class="flex items-center gap-2 text-[9px] font-black text-white/60 mt-0.5">
+                            <span id="prof-user-id">ID: --</span><span class="text-white/25">|</span><span id="prof-email" class="truncate">E-posta doğrulanıyor</span>
+                        </div>
                         <div class="flex items-center gap-2 mt-1 flex-wrap">
                             <span id="prof-rank-name" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-2 py-0.5 rounded font-io text-xs shadow">Lv.1 Tohum</span>
-                            <span id="prof-rank-icon" class="bg-black/50 px-2 py-0.5 rounded text-[10px] text-yellow-300 font-black border border-yellow-500/40">🌱</span>
-                            <span id="prof-gold-badge" class="bg-black/50 px-2 py-0.5 rounded text-[10px] text-[#FFDF73] font-black border border-yellow-500/40"><i class="fa-solid fa-coins text-[#F7C02D]"></i> 1,500</span>
+                            <span id="prof-rank-icon" class="bg-black/50 w-7 h-7 flex items-center justify-center rounded-lg text-yellow-300 font-black border border-yellow-500/40"><i class="fa-solid fa-seedling"></i></span>
+                            <span id="prof-gold-badge" class="bg-black/50 px-2 py-1 rounded-lg text-[10px] text-[#FFDF73] font-black border border-yellow-500/40"><i class="fa-solid fa-coins text-[#F7C02D]"></i> --</span>
                         </div>
                         <div id="prof-next-rank" class="text-[10px] font-black text-[#9FE870] mt-1">➡️ 🪨 Taş: 350 XP kaldı</div>
                     </div>
@@ -918,7 +921,7 @@
                 <div class="bg-black/30 p-3 rounded-xl border border-white/10 flex flex-col gap-1.5">
                     <div class="flex justify-between items-center text-[11px] font-black text-white">
                         <span class="flex items-center gap-1.5 text-yellow-400 font-io text-xs"><i class="fa-solid fa-sparkles"></i> XP İlerlemesi</span>
-                        <span id="prof-xp-text" class="text-white font-io text-xs stroke-text">450 / 800 XP (56%)</span>
+                        <span id="prof-xp-text" class="text-white font-io text-xs stroke-text">-- XP</span>
                     </div>
                     <div class="w-full h-3.5 bg-black/70 rounded-full border border-black overflow-hidden relative shadow-inner">
                         <div id="prof-xp-bar" class="h-full bg-gradient-to-r from-[#79D138] to-[#98EE4A] rounded-full transition-all duration-500 shadow" style="width: 56%;"></div>
@@ -949,7 +952,7 @@
                     </div>
                     <div class="bg-black/30 p-2 rounded-lg border border-white/10 text-center">
                         <span class="text-[9px] font-black text-gray-400 block">COINS</span>
-                        <span id="prof-coins" class="font-io text-base text-yellow-400 stroke-text">1500</span>
+                        <span id="prof-coins" class="font-io text-base text-yellow-400 stroke-text">--</span>
                     </div>
                 </div>
 
@@ -1620,6 +1623,8 @@
             if (sg) sg.innerHTML = formatGold(gold);
             const pg = document.getElementById('prof-coins');
             if (pg) pg.innerHTML = formatGold(gold);
+            const pgb = document.getElementById('prof-gold-badge');
+            if (pgb) pgb.innerHTML = `<i class="fa-solid fa-coins text-[#F7C02D]"></i> ${gold.toLocaleString()}`;
         }
 
         /* ════════════════════════════════════════════════════════════════
@@ -2036,6 +2041,11 @@
             return r;
         }
 
+        function getRankIconHtml(rankId) {
+            const icons = ['fa-seedling', 'fa-gem', 'fa-tree', 'fa-bow-arrow', 'fa-shield-halved', 'fa-helmet-safety', 'fa-fire-flame-curved', 'fa-crystal-ball', 'fa-wind', 'fa-moon', 'fa-crown', 'fa-star'];
+            return `<i class="fa-solid ${icons[Math.max(0, Math.min(icons.length - 1, rankId))] || 'fa-star'}"></i>`;
+        }
+
         async function updateProfileModalData() {
             if (_authToken) {
                 try {
@@ -2074,8 +2084,10 @@
             };
             
             document.getElementById('prof-username').textContent = u.username;
+            document.getElementById('prof-user-id').textContent = `ID: ${u.id ?? '--'}`;
+            document.getElementById('prof-email').textContent = u.email || 'E-posta kayıtlı değil';
             document.getElementById('prof-rank-name').textContent = `Lv.${rankId + 1} ${currentRankName}`;
-            document.getElementById('prof-rank-icon').textContent = RANK_ICONS[rankId] || '🌱';
+            document.getElementById('prof-rank-icon').innerHTML = getRankIconHtml(rankId);
             document.getElementById('prof-next-rank').textContent = rankId >= RANKS.length - 1 ? '➡️ ✨ Maksimum rütbe' : `➡️ ${RANK_ICONS[Math.min(rankId + 1, RANK_ICONS.length - 1)] || '🌱'} ${nextRankName}: ${neededToNext.toLocaleString()} XP kaldı`;
             
             if (rankId >= RANKS.length - 1) {
@@ -2804,9 +2816,26 @@
             } catch(e) { return []; }
         }
 
-        function updateChallengeProgress() {
+        let _challengeRefreshInFlight = false;
+
+        function updateChallengeProgress(skipRefresh = false) {
             const list = document.getElementById('challenge-list');
             if (!list) return;
+
+            if (_authToken && !skipRefresh && !_challengeRefreshInFlight) {
+                _challengeRefreshInFlight = true;
+                fetch('/api/profile', { headers: { 'Authorization': 'Bearer ' + _authToken } })
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        if (data?.user) {
+                            _authUser = data.user;
+                            _currentUser = data.user;
+                            localStorage.setItem('fb_auth_user', JSON.stringify(data.user));
+                        }
+                    })
+                    .catch(() => {})
+                    .finally(() => { _challengeRefreshInFlight = false; updateChallengeProgress(true); });
+            }
 
             const progress = getFullQuestProgress();
             const claimed = getClaimedQuestsList();
