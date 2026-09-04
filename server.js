@@ -101,6 +101,13 @@ const RANKS = [0, 500, 1500, 3500, 7000, 12000, 20000, 35000, 60000, 100000, 180
 const RANK_NAMES = ['Tohum', 'Taş', 'Köylü', 'Acemi', 'Savaşçı', 'Muhafız', 'Ateş Efendisi', 'Kristal', 'Fırtına', 'Gece Hanı', 'Efsane', 'Tanrısal'];
 const RANK_ICONS = ['🌱', '🪨', '🪵', '🏹', '⚔️', '🛡️', '🔥', '💎', '🌪️', '🌙', '👑', '✨'];
 
+const CHEST_CONFIG = {
+  wood_chest: { cost: 180, rewards: ['penguin', 'frog', 'croc', 'fox', 'panda', 'rabbit', 'octopus', 'polarbear', 'lion', 'skull', 'ninja', 'robot'] },
+  gold_chest: { cost: 420, rewards: ['dragon', 'phoenix', 'penguin', 'octopus', 'shark', 'skull', 'panda', 'lion', 'yeti', 'robot', 'ninja', 'kiz_orman'] },
+  rare_chest: { cost: 850, rewards: ['dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'yeti', 'robot', 'shark'] },
+  ame_chest: { cost: 1600, rewards: ['kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'phoenix', 'dragon'] }
+};
+
 function rankInfo(xp) {
   let rankId = 0;
   for (let i = 0; i < RANKS.length; i++) {
@@ -739,6 +746,20 @@ async function handleApi(request, response, requestPath) {
     if (!user) sendJson(response, 401, { error: 'Oturum gereklidir.' });
     else {
       const itemId = String(body.itemId || '');
+      const chest = CHEST_CONFIG[String(body.chestId || itemId)];
+      if (chest) {
+        if ((user.coins || 0) < chest.cost) {
+          sendJson(response, 400, { error: 'Yetersiz altın.' });
+        } else {
+          const rewardId = chest.rewards[Math.floor(Math.random() * chest.rewards.length)];
+          user.coins = (user.coins || 0) - chest.cost;
+          user.gold = user.coins;
+          user.ownedItems = [...new Set([...(user.ownedItems || []), rewardId])];
+          saveAccountData(true);
+          sendJson(response, 200, { success: true, chestId: Object.keys(CHEST_CONFIG).find(id => CHEST_CONFIG[id] === chest), rewardId, newCoins: user.coins, ownedItems: user.ownedItems });
+        }
+        return true;
+      }
       const cost = Math.max(0, Number(body.cost) || 0);
       if (!itemId) {
         sendJson(response, 400, { error: 'Geçersiz eşya.' });

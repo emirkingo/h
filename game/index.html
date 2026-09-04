@@ -2254,6 +2254,7 @@
                       </div>
                     </div>
                     <div id="chest-spin-text" style="font-family:Arial, sans-serif; font-weight:700; font-size:17px; color:#fff5d6; min-height:26px; margin-top:8px;">Şanslı ödül hazırlanıyor...</div>
+                    <div id="chest-spin-candidates" style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; min-height:42px; margin:8px auto 2px; max-width:360px;"></div>
                     <div id="chest-spin-reward" style="margin:18px auto 8px; width:120px; height:120px; display:flex; align-items:center; justify-content:center; border-radius:18px; border:3px solid rgba(255,210,122,0.85); background:rgba(31,18,10,0.9); overflow:hidden; opacity:0; transform:scale(0.72); transition:all 260ms ease; box-shadow:0 0 16px rgba(255,210,122,0.25);"></div>
                     <button id="chest-spin-close" style="margin-top:16px; width:100%; border:none; border-radius:12px; background:linear-gradient(180deg,#f7c35a,#d58a1a); color:#1a1207; font-weight:900; letter-spacing:1px; padding:12px 18px; cursor:pointer; display:none; font-size:13px; text-transform:uppercase;">KAPAT</button>
                   </div>
@@ -2274,7 +2275,11 @@
             const ring = overlay.querySelector('#chest-spin-ring');
             const textEl = overlay.querySelector('#chest-spin-text');
             const rewardEl = overlay.querySelector('#chest-spin-reward');
+            const candidatesEl = overlay.querySelector('#chest-spin-candidates');
             const closeBtn = overlay.querySelector('#chest-spin-close');
+
+            const candidates = (chest.rewardPool || []).map(id => REAL_SKINS.find(item => item.id === id)).filter(Boolean);
+            candidatesEl.innerHTML = candidates.map(item => `<img src="${item.img}" alt="${item.name}" title="${item.name}" style="width:34px;height:34px;object-fit:contain;border:2px solid rgba(255,220,140,.45);border-radius:8px;background:rgba(0,0,0,.25);padding:2px;">`).join('');
 
             const rewardImg = document.createElement('img');
             rewardImg.src = reward.img;
@@ -2292,12 +2297,19 @@
             overlay.style.display = 'flex';
             closeBtn.style.display = 'none';
             ring.style.transform = 'rotate(0deg)';
+            let candidateIndex = 0;
+            const candidateTimer = setInterval(() => {
+                const candidateImages = candidatesEl.querySelectorAll('img');
+                candidateImages.forEach((image, index) => { image.style.borderColor = index === candidateIndex ? '#fff2ad' : 'rgba(255,220,140,.45)'; image.style.transform = index === candidateIndex ? 'scale(1.18)' : 'scale(1)'; });
+                candidateIndex = (candidateIndex + 1) % Math.max(1, candidateImages.length);
+            }, 120);
             requestAnimationFrame(() => {
                 const finalRotation = 1800 + Math.floor(Math.random() * 540);
                 ring.style.transform = `rotate(${finalRotation}deg)`;
             });
 
             setTimeout(() => {
+                clearInterval(candidateTimer);
                 textEl.textContent = `${reward.name} çıktı!`;
                 rewardEl.style.opacity = '1';
                 rewardEl.style.transform = 'scale(1)';
@@ -2472,7 +2484,7 @@
                     const response = await fetch('/api/shop/buy', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _authToken },
-                        body: JSON.stringify({ itemId: chestId, cost: cost })
+                        body: JSON.stringify({ itemId: chestId, chestId })
                     });
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok || !data.success) {
@@ -2480,6 +2492,19 @@
                         return;
                     }
                     if (typeof data.newCoins === 'number') setPlayerGold(data.newCoins);
+                    const reward = REAL_SKINS.find(item => item.id === data.rewardId);
+                    if (!reward) {
+                        triggerToast('Sunucu geçerli bir chest ödülü döndürmedi.', 'fa-triangle-exclamation');
+                        return;
+                    }
+                    localStorage.setItem('fb_acc_owned', JSON.stringify(normalizeOwnedItems(data.ownedItems)));
+                    _authUser = { ...(_authUser || {}), ownedItems: normalizeOwnedItems(data.ownedItems), coins: data.newCoins, gold: data.newCoins };
+                    localStorage.setItem('fb_auth_user', JSON.stringify(_authUser));
+                    openChestRewardSpin(chest, reward);
+                    renderCosmeticsOwnedGrid();
+                    renderShopAllGrid();
+                    playSfx('buy');
+                    return;
                 } catch (error) {
                     triggerToast('Sunucu bağlantısı kurulamadı; chest açılamadı.', 'fa-triangle-exclamation');
                     return;
