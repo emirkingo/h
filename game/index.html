@@ -1531,23 +1531,31 @@
 
         function drawChestIcon(context, cx, cy, rarity = 'common', scale = 1, time = 0) {
             if (!context) return;
-            const colors = { common: ['#6b4425', '#c78b43', '#f5c56b'], rare: ['#174f78', '#2fa8dc', '#a9edff'], epic: ['#4b1c72', '#a444d6', '#f0b7ff'], legendary: ['#7b2b12', '#e58a24', '#ffe18a'] };
-            const [dark, main, shine] = colors[rarity] || colors.common;
-            const w = 92 * scale, h = 58 * scale, x = cx - w / 2, y = cy - h / 2;
-            context.save();
-            context.translate(0, Math.sin(time * 0.08) * 1.5 * scale);
-            context.shadowColor = shine; context.shadowBlur = 10 * scale;
+            const colors = { common: ['#3c2110', '#9b5d29', '#f6c56c', '#5b3217'], rare: ['#092f4e', '#187ba9', '#b8f3ff', '#0f5277'], epic: ['#26103f', '#7b30b2', '#f2bcff', '#4d1a75'], legendary: ['#471207', '#bc4e16', '#ffe9a1', '#7e250d'] };
+            const [dark, main, shine, band] = colors[rarity] || colors.common;
+            const w = 104 * scale, h = 62 * scale, x = cx - w / 2, y = cy - h / 2;
+            const bob = Math.sin(time * 0.08) * 1.8 * scale;
+            context.save(); context.translate(0, bob);
+            context.shadowColor = shine; context.shadowBlur = (rarity === 'legendary' ? 18 : 11) * scale;
+            context.fillStyle = 'rgba(0,0,0,.42)'; context.beginPath(); context.ellipse(cx, y + h * .62, w * .58, h * .2, 0, 0, Math.PI * 2); context.fill();
             const body = context.createLinearGradient(x, y, x, y + h);
-            body.addColorStop(0, main); body.addColorStop(1, dark);
-            context.fillStyle = body; context.strokeStyle = '#180d08'; context.lineWidth = 4 * scale;
-            context.beginPath(); context.roundRect(x, y + h * .22, w, h * .68, 7 * scale); context.fill(); context.stroke();
-            context.fillStyle = shine; context.globalAlpha = .72;
-            context.beginPath(); context.ellipse(cx, y + h * .23, w * .48, h * .3, 0, Math.PI, Math.PI * 2); context.fill();
-            context.globalAlpha = 1; context.strokeStyle = '#180d08'; context.lineWidth = 4 * scale;
-            context.beginPath(); context.moveTo(x + w * .04, y + h * .26); context.quadraticCurveTo(cx, y - h * .1, x + w * .96, y + h * .26); context.stroke();
-            context.fillStyle = '#ffd966'; context.strokeStyle = '#5c280b'; context.lineWidth = 2 * scale;
-            context.beginPath(); context.roundRect(cx - 10 * scale, y + h * .38, 20 * scale, 18 * scale, 3 * scale); context.fill(); context.stroke();
-            context.fillStyle = 'rgba(255,255,255,.75)'; context.beginPath(); context.arc(cx - 4 * scale, y + h * .43, 3 * scale, 0, Math.PI * 2); context.fill();
+            body.addColorStop(0, main); body.addColorStop(.55, main); body.addColorStop(1, dark);
+            context.fillStyle = body; context.strokeStyle = '#160b06'; context.lineWidth = 4 * scale;
+            context.beginPath(); context.moveTo(x, y + h * .18); context.lineTo(x + w * .9, y + h * .18); context.lineTo(x + w, y + h * .3); context.lineTo(x + w, y + h * .9); context.lineTo(x + w * .1, y + h); context.lineTo(x, y + h * .88); context.closePath(); context.fill(); context.stroke();
+            context.fillStyle = 'rgba(255,255,255,.12)'; context.strokeStyle = 'rgba(255,255,255,.2)'; context.lineWidth = 1.2 * scale;
+            for (let index = 0; index < 6; index++) { const grainY = y + h * (.38 + index * .085); context.beginPath(); context.moveTo(x + w * .1, grainY); context.quadraticCurveTo(cx, grainY + Math.sin(index * 2.1) * 2 * scale, x + w * .88, grainY - 1 * scale); context.stroke(); }
+            context.fillStyle = band; context.strokeStyle = '#1b0d07'; context.lineWidth = 2.5 * scale;
+            context.beginPath(); context.roundRect(x + w * .08, y + h * .22, w * .1, h * .7, 2 * scale); context.fill(); context.stroke();
+            context.beginPath(); context.roundRect(x + w * .82, y + h * .2, w * .1, h * .68, 2 * scale); context.fill(); context.stroke();
+            const lid = context.createLinearGradient(x, y - h * .1, x, y + h * .3); lid.addColorStop(0, shine); lid.addColorStop(.35, main); lid.addColorStop(1, dark);
+            context.fillStyle = lid; context.strokeStyle = '#160b06'; context.lineWidth = 4 * scale;
+            context.beginPath(); context.moveTo(x + w * .02, y + h * .28); context.quadraticCurveTo(cx, y - h * .28, x + w * .98, y + h * .28); context.lineTo(x + w * .9, y + h * .4); context.quadraticCurveTo(cx, y + h * .02, x + w * .1, y + h * .4); context.closePath(); context.fill(); context.stroke();
+            context.strokeStyle = 'rgba(255,255,255,.55)'; context.lineWidth = 1.8 * scale; context.beginPath(); context.moveTo(x + w * .14, y + h * .25); context.quadraticCurveTo(cx, y - h * .12, x + w * .86, y + h * .25); context.stroke();
+            context.fillStyle = band; context.strokeStyle = '#1b0d07'; context.lineWidth = 2 * scale; context.beginPath(); context.roundRect(cx - w * .08, y + h * .12, w * .16, h * .72, 3 * scale); context.fill(); context.stroke();
+            context.fillStyle = '#ffd864'; context.strokeStyle = '#3e1d08'; context.lineWidth = 2 * scale; context.beginPath(); context.roundRect(cx - w * .11, y + h * .39, w * .22, h * .28, 4 * scale); context.fill(); context.stroke();
+            context.fillStyle = '#3a1b08'; context.beginPath(); context.arc(cx, y + h * .51, 3.2 * scale, 0, Math.PI * 2); context.fill(); context.fillRect(cx - 1.2 * scale, y + h * .51, 2.4 * scale, 7 * scale);
+            context.fillStyle = shine; for (const point of [[x + w * .12, y + h * .34], [x + w * .88, y + h * .32], [x + w * .14, y + h * .84], [x + w * .86, y + h * .82]]) { context.beginPath(); context.arc(point[0], point[1], 2.4 * scale, 0, Math.PI * 2); context.fill(); }
+            if (rarity === 'legendary' || rarity === 'epic') { context.strokeStyle = shine; context.lineWidth = 1.4 * scale; context.globalAlpha = .7; context.beginPath(); context.moveTo(cx - w * .28, y + h * .08); context.lineTo(cx - w * .2, y - h * .08); context.moveTo(cx + w * .28, y + h * .08); context.lineTo(cx + w * .2, y - h * .08); context.stroke(); }
             context.restore();
         }
 
@@ -2384,8 +2392,9 @@
                     <div style="display:flex; align-items:center; justify-content:center; position:relative; margin:18px auto; width:220px; height:220px;">
                       <div id="chest-spin-ring" style="width:200px; height:200px; border-radius:50%; border:10px solid #f9d98b; background:conic-gradient(from 0deg, #ffb703, #f77f00, #ffcb77, #ffb703, #f77f00, #ffcb77, #ffb703); box-shadow: inset 0 0 25px rgba(255,255,255,0.2), 0 0 30px rgba(255,180,58,0.35); position:absolute; transform:rotate(0deg); transition:transform 4.2s cubic-bezier(0.12, 0.86, 0.19, 1);"></div>
                                             <div id="chest-spin-reel-window" style="width:286px; height:118px; position:absolute; overflow:hidden; border:4px solid #f9d98b; border-radius:16px; background:linear-gradient(180deg,rgba(20,10,4,.98),rgba(58,28,8,.98)); box-shadow:0 0 22px rgba(255,184,55,.45), inset 0 0 18px rgba(0,0,0,.7);">
-                                                <div id="chest-spin-reel-track" style="height:100%; display:flex; align-items:center; gap:8px; padding:0 101px; transform:translateX(0); transition:transform 4.2s cubic-bezier(0.08,0.82,0.16,1);"></div>
-                                                <div style="position:absolute; left:50%; top:-4px; bottom:-4px; width:3px; transform:translateX(-50%); background:#fff2a8; box-shadow:0 0 12px #ffd35a; pointer-events:none;"></div>
+                                                <div id="chest-spin-reel-track" style="height:100%; display:flex; align-items:center; gap:8px; padding:0 101px; transform:translateX(0); transition:transform 4.2s cubic-bezier(0.08,0.82,0.16,1); perspective:700px;"></div>
+                                                <div style="position:absolute; inset:0; background:linear-gradient(90deg,rgba(8,4,2,.9),transparent 18%,transparent 82%,rgba(8,4,2,.9)); pointer-events:none;"></div>
+                                                <div style="position:absolute; left:50%; top:-4px; bottom:-4px; width:4px; transform:translateX(-50%); background:#fff2a8; box-shadow:0 0 12px #ffd35a,0 0 24px rgba(255,191,45,.7); pointer-events:none;"></div>
                                             </div>
                     </div>
                     <div id="chest-spin-text" style="font-family:Arial, sans-serif; font-weight:700; font-size:17px; color:#fff5d6; min-height:26px; margin-top:8px;">Şanslı ödül hazırlanıyor...</div>
@@ -2429,6 +2438,7 @@
             reelItems.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.style.cssText = 'flex:0 0 84px;height:92px;border:2px solid rgba(255,220,140,.42);border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.34));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;';
+                card.style.transform = `rotateY(${(index % 3 - 1) * 4}deg) scale(${index % 5 === 0 ? 1.04 : 1})`;
                 if (item.generated) {
                     const canvas = document.createElement('canvas'); canvas.width = 72; canvas.height = 72; drawGeneratedSkin(canvas.getContext('2d'), 36, 36, item.id, _animFrame, .52); card.appendChild(canvas);
                 } else {
