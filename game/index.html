@@ -2475,13 +2475,13 @@
                 const priceTag = document.createElement('div');
                 priceTag.className = 'mt-1 w-full text-center';
                 if (_shopTab === 'chests') {
-                    priceTag.innerHTML = `<span class="text-[9px] font-io text-amber-300 stroke-text">${item.cost} 🪙</span>`;
+                    priceTag.innerHTML = `<span class="text-[9px] font-io text-amber-300 stroke-text">${item.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i></span>`;
                 } else if (isEquipped) {
                     priceTag.innerHTML = '<span class="text-[9px] font-io text-[#79d138] stroke-text">EQUIPPED</span>';
                 } else if (owned) {
                     priceTag.innerHTML = '<span class="text-[9px] font-io text-yellow-300 stroke-text">SAHİPSİN</span>';
                 } else {
-                    priceTag.innerHTML = `<span class="text-[9px] font-io text-amber-300 stroke-text">${item.cost} 🪙</span>`;
+                    priceTag.innerHTML = `<span class="text-[9px] font-io text-amber-300 stroke-text">${item.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i></span>`;
                 }
                 card.appendChild(priceTag);
 
@@ -2494,6 +2494,7 @@
         }
 
         function selectShopPreviewItem(item, cat) {
+            if (!item) return;
             _shopPreviewItem = { item, cat };
             const nameEl = document.getElementById('shop-preview-name');
             if (nameEl) nameEl.textContent = item.name;
@@ -2504,11 +2505,12 @@
             const btn = document.getElementById('shop-preview-btn');
 
             if (cat === 'chests') {
-                statusEl.innerHTML = `FİYAT: ${item.cost} 🪙`;
+                statusEl.innerHTML = `FİYAT: ${item.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i>`;
                 statusEl.className = 'font-io text-xs text-[#FFDF73] block mb-1 stroke-text';
                 btn.innerHTML = `SATIN AL & AÇ (${item.cost} 🪙)`;
                 btn.className = 'btn-3d btn-red w-full py-2 font-io text-xs stroke-text';
                 btn.onclick = () => buyChestItem(item.id, item.cost);
+                redrawCosmeticPreviews();
                 return;
             }
 

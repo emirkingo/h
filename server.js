@@ -312,7 +312,7 @@ function profileResponse(user) {
 
 function usernameKey(username) { return String(username || '').trim().toLocaleLowerCase('tr-TR'); }
 function loginIdentifier(value) {
-  return String(value || '').trim().toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return String(value || '').trim().toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 function findUserForLogin(identifier) {
   const normalized = loginIdentifier(identifier);
