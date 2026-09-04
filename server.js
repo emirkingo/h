@@ -310,7 +310,14 @@ function profileResponse(user) {
   };
 }
 
-function usernameKey(username) { return String(username || '').trim().toLowerCase(); }
+function usernameKey(username) { return String(username || '').trim().toLocaleLowerCase('tr-TR'); }
+function loginIdentifier(value) {
+  return String(value || '').trim().toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function findUserForLogin(identifier) {
+  const normalized = loginIdentifier(identifier);
+  return Object.values(accountData.users).find(user => loginIdentifier(user.username) === normalized || (user.email && loginIdentifier(user.email) === normalized)) || null;
+}
 
 function createToken(user) {
   const payload = {
@@ -540,7 +547,7 @@ async function handleApi(request, response, requestPath) {
   }
   if (requestPath === '/api/auth/login' && request.method === 'POST') {
     if (authRateLimited(request, 'login')) { response.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '600' }); response.end(JSON.stringify({ error: 'Çok fazla giriş denemesi. Lütfen 10 dakika sonra tekrar deneyin.' })); return true; }
-    const user = accountData.users[usernameKey(body.username)];
+    const user = findUserForLogin(body.username);
     const password = String(body.password || '');
     const check = user && user.hash && user.salt && hashPassword(password, user.salt).hash;
     if (!user || !check || !crypto.timingSafeEqual(Buffer.from(check, 'hex'), Buffer.from(user.hash, 'hex'))) {
