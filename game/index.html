@@ -1467,6 +1467,11 @@
             baltalar: REAL_AXES,
             chests: CHEST_ITEMS
         };
+        const COSMETIC_ITEMS_MAP = {
+            deriler: REAL_SKINS,
+            kiliclar: REAL_SWORDS,
+            baltalar: REAL_AXES
+        };
 
         const RANKS = ['Tohum', 'Taş', 'Köylü', 'Acemi', 'Savaşçı', 'Muhafız', 'Ateş Efendisi', 'Kristal', 'Fırtına', 'Gece Hanı', 'Efsane', 'Tanrısal'];
         const RANK_ICONS = ['🌱', '🪨', '🪵', '🏹', '⚔️', '🛡️', '🔥', '💎', '🌪️', '🌙', '👑', '✨'];
@@ -2104,7 +2109,7 @@
         }
 
         function nextCosmeticPage() {
-            const allItems = ALL_ITEMS_MAP[_cosmeticTab] || [];
+            const allItems = COSMETIC_ITEMS_MAP[_cosmeticTab] || [];
             if ((_cosmeticPage + 1) * COSMETICS_PAGE_SIZE < allItems.length) {
                 _cosmeticPage++;
                 renderCosmeticsOwnedGrid();
@@ -2116,7 +2121,7 @@
             const grid = document.getElementById('cosmetic-owned-grid');
             if (!grid) return;
             grid.innerHTML = '';
-            const allItems = (ALL_ITEMS_MAP[_cosmeticTab] || []).filter(item => isItemOwned(item));
+            const allItems = (COSMETIC_ITEMS_MAP[_cosmeticTab] || []).filter(item => isItemOwned(item));
             const total = allItems.length;
             const startIdx = _cosmeticPage * COSMETICS_PAGE_SIZE;
             const endIdx = Math.min(startIdx + COSMETICS_PAGE_SIZE, total);
@@ -2159,20 +2164,13 @@
 
                 const imgWrap = document.createElement('div');
                 imgWrap.className = 'w-14 h-14 my-1 flex items-center justify-center relative';
-                if (_shopTab === 'chests') {
-                    const chestCanvas = document.createElement('canvas');
-                    chestCanvas.width = 96; chestCanvas.height = 72;
-                    drawChestIcon(chestCanvas.getContext('2d'), 48, 36, item.rarity, .62, _animFrame);
-                    imgWrap.appendChild(chestCanvas);
-                } else {
-                    const img = document.createElement('img');
-                    img.src = item.img;
-                    img.loading = 'lazy';
-                    img.decoding = 'async';
-                    img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
-                    img.alt = item.name;
-                    imgWrap.appendChild(img);
-                }
+                const img = document.createElement('img');
+                img.src = item.img;
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
+                img.alt = item.name;
+                imgWrap.appendChild(img);
                 card.appendChild(imgWrap);
 
                 const nameSpan = document.createElement('span');
@@ -2453,13 +2451,20 @@
 
                 const imgWrap = document.createElement('div');
                 imgWrap.className = 'w-14 h-14 my-1 flex items-center justify-center relative';
-                const img = document.createElement('img');
-                img.src = item.img;
-                img.loading = 'lazy';
-                img.decoding = 'async';
-                img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
-                img.alt = item.name;
-                imgWrap.appendChild(img);
+                if (_shopTab === 'chests') {
+                    const chestCanvas = document.createElement('canvas');
+                    chestCanvas.width = 96; chestCanvas.height = 72;
+                    drawChestIcon(chestCanvas.getContext('2d'), 48, 36, item.rarity, .62, _animFrame);
+                    imgWrap.appendChild(chestCanvas);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = item.img;
+                    img.loading = 'lazy';
+                    img.decoding = 'async';
+                    img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
+                    img.alt = item.name;
+                    imgWrap.appendChild(img);
+                }
                 card.appendChild(imgWrap);
 
                 const nameSpan = document.createElement('span');
