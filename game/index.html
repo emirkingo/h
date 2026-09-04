@@ -1496,6 +1496,28 @@
             return img;
         }
 
+        function drawChestIcon(context, cx, cy, rarity = 'common', scale = 1, time = 0) {
+            if (!context) return;
+            const colors = { common: ['#6b4425', '#c78b43', '#f5c56b'], rare: ['#174f78', '#2fa8dc', '#a9edff'], epic: ['#4b1c72', '#a444d6', '#f0b7ff'], legendary: ['#7b2b12', '#e58a24', '#ffe18a'] };
+            const [dark, main, shine] = colors[rarity] || colors.common;
+            const w = 92 * scale, h = 58 * scale, x = cx - w / 2, y = cy - h / 2;
+            context.save();
+            context.translate(0, Math.sin(time * 0.08) * 1.5 * scale);
+            context.shadowColor = shine; context.shadowBlur = 10 * scale;
+            const body = context.createLinearGradient(x, y, x, y + h);
+            body.addColorStop(0, main); body.addColorStop(1, dark);
+            context.fillStyle = body; context.strokeStyle = '#180d08'; context.lineWidth = 4 * scale;
+            context.beginPath(); context.roundRect(x, y + h * .22, w, h * .68, 7 * scale); context.fill(); context.stroke();
+            context.fillStyle = shine; context.globalAlpha = .72;
+            context.beginPath(); context.ellipse(cx, y + h * .23, w * .48, h * .3, 0, Math.PI, Math.PI * 2); context.fill();
+            context.globalAlpha = 1; context.strokeStyle = '#180d08'; context.lineWidth = 4 * scale;
+            context.beginPath(); context.moveTo(x + w * .04, y + h * .26); context.quadraticCurveTo(cx, y - h * .1, x + w * .96, y + h * .26); context.stroke();
+            context.fillStyle = '#ffd966'; context.strokeStyle = '#5c280b'; context.lineWidth = 2 * scale;
+            context.beginPath(); context.roundRect(cx - 10 * scale, y + h * .38, 20 * scale, 18 * scale, 3 * scale); context.fill(); context.stroke();
+            context.fillStyle = 'rgba(255,255,255,.75)'; context.beginPath(); context.arc(cx - 4 * scale, y + h * .43, 3 * scale, 0, Math.PI * 2); context.fill();
+            context.restore();
+        }
+
         function redrawCosmeticPreviews() {
             const canvases = [
                 ['cosmetic-preview-canvas', _cosmeticPreviewItem],
@@ -1506,6 +1528,10 @@
                 if (!canvas) return;
                 const context = canvas.getContext('2d');
                 context.clearRect(0, 0, canvas.width, canvas.height);
+                if (canvasId === 'shop-preview-canvas' && selection?.cat === 'chests') {
+                    drawChestIcon(context, 100, 100, selection.item.rarity, 1.5, _animFrame);
+                    return;
+                }
                 const skinId = selection?.cat === 'deriler' ? selection.item.id : _currentSkin;
                 const weaponId = selection && (selection.cat === 'baltalar' || selection.cat === 'kiliclar')
                     ? selection.item.id
@@ -1820,6 +1846,23 @@
 
                 const avi = document.getElementById('header-avatar-img');
                 if (avi) avi.src = `players/${_currentSkin}.png`;
+                fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + _authToken } })
+                    .then(response => response.ok ? response.json() : Promise.reject(new Error('session expired')))
+                    .then(data => {
+                        if (data.user) {
+                            _authUser = data.user;
+                            localStorage.setItem('fb_auth_user', JSON.stringify(data.user));
+                            hydratePlayerProfileState(data.user);
+                            updateHeaderProfile(data.user);
+                        }
+                    })
+                    .catch(() => {
+                        _authToken = null; _authUser = null;
+                        localStorage.removeItem('fb_auth_token'); localStorage.removeItem('fb_auth_user');
+                        document.getElementById('header-guest-view').classList.remove('hidden');
+                        document.getElementById('header-user-view').classList.add('hidden');
+                        triggerToast('Oturum süresi doldu, tekrar giriş yapın.', 'fa-circle-exclamation');
+                    });
             } else {
                 _currentUser = null;
                 const ni = document.getElementById('name-input');
@@ -2116,13 +2159,20 @@
 
                 const imgWrap = document.createElement('div');
                 imgWrap.className = 'w-14 h-14 my-1 flex items-center justify-center relative';
-                const img = document.createElement('img');
-                img.src = item.img;
-                img.loading = 'lazy';
-                img.decoding = 'async';
-                img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
-                img.alt = item.name;
-                imgWrap.appendChild(img);
+                if (_shopTab === 'chests') {
+                    const chestCanvas = document.createElement('canvas');
+                    chestCanvas.width = 96; chestCanvas.height = 72;
+                    drawChestIcon(chestCanvas.getContext('2d'), 48, 36, item.rarity, .62, _animFrame);
+                    imgWrap.appendChild(chestCanvas);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = item.img;
+                    img.loading = 'lazy';
+                    img.decoding = 'async';
+                    img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
+                    img.alt = item.name;
+                    imgWrap.appendChild(img);
+                }
                 card.appendChild(imgWrap);
 
                 const nameSpan = document.createElement('span');
@@ -2504,6 +2554,19 @@
             return REAL_SKINS.find(item => item.id === rewardId) || REAL_SKINS[0];
         }
 
+        function showChestPurchaseConfirm(chest) {
+            return new Promise(resolve => {
+                const overlay = document.createElement('div');
+                overlay.className = 'fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm';
+                overlay.innerHTML = `<div class="panel-wood w-full max-w-[360px] p-4 text-center border-[4px] border-[#f2d184] rounded-2xl shadow-[0_0_35px_rgba(244,175,65,.4)]"><div class="font-io text-[#ffdf73] text-lg">${chest.name}</div><div class="text-white/80 text-xs mt-1">Sandığı açmak ve ödül spinini başlatmak istiyor musun?</div><div class="flex justify-center my-3"><canvas width="130" height="90" id="purchase-chest-canvas"></canvas></div><div class="font-io text-[#ffe39a] text-sm mb-3">${chest.cost.toLocaleString()} 🪙</div><div class="grid grid-cols-2 gap-2"><button id="purchase-chest-cancel" class="btn-3d btn-action py-2 font-io text-xs">İPTAL</button><button id="purchase-chest-accept" class="btn-3d btn-yellow py-2 font-io text-xs stroke-text-dark">AÇ VE SPİNİ BAŞLAT</button></div></div>`;
+                document.body.appendChild(overlay);
+                drawChestIcon(overlay.querySelector('#purchase-chest-canvas').getContext('2d'), 65, 45, chest.rarity, .95, _animFrame);
+                const finish = result => { overlay.remove(); resolve(result); };
+                overlay.querySelector('#purchase-chest-cancel').onclick = () => finish(false);
+                overlay.querySelector('#purchase-chest-accept').onclick = () => finish(true);
+            });
+        }
+
         async function buyChestItem(chestId, cost) {
             const chest = CHEST_ITEMS.find(entry => entry.id === chestId);
             if (!chest) return;
@@ -2513,7 +2576,7 @@
                 return;
             }
 
-            const confirmed = window.confirm(`${chest.name} için ${cost} 🪙 ödeyip açmak istiyor musun?`);
+            const confirmed = await showChestPurchaseConfirm(chest);
             if (!confirmed) {
                 triggerToast('Chest açma reddedildi.', 'fa-xmark');
                 return;
@@ -3761,9 +3824,13 @@
             if (spc) {
                 const sctx = spc.getContext('2d');
                 sctx.clearRect(0, 0, 200, 200);
+                if (_shopPreviewItem && _shopPreviewItem.cat === 'chests') {
+                    drawChestIcon(sctx, 100, 100, _shopPreviewItem.item.rarity, 1.5, _animFrame);
+                } else {
                 const prevSkin = (_shopPreviewItem && _shopPreviewItem.cat === 'deriler') ? _shopPreviewItem.item.id : _currentSkin;
                 const prevWep = (_shopPreviewItem && (_shopPreviewItem.cat === 'baltalar' || _shopPreviewItem.cat === 'kiliclar')) ? _shopPreviewItem.item.id : _equippedWeapon;
                 drawExactInGamePlayer(sctx, 95, 125, prevSkin, prevWep, _animFrame, 0.74);
+                }
             }
 
             requestAnimationFrame(animateMenu);

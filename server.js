@@ -73,8 +73,8 @@ const MOB_TYPES = [
   { shape: 'spider', color: '#2a1a38', outline: '#0f0814', eyes: '#ff1100', typeName: '🕷️ Örümcek', radius: 48, hp: 380, dmg: 34, speed: 17, wanderSpeed: 9, xpReward: 100, goldReward: 45 },
 ];
 const dataFile = process.env.DATA_FILE || path.join(__dirname, 'forest-data.json');
-const authSecret = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
-if (!process.env.AUTH_SECRET) console.warn('[Security] AUTH_SECRET is not set; tokens will reset after restart.');
+const authSecret = process.env.AUTH_SECRET || crypto.createHash('sha256').update(`forestbrawl:${path.resolve(dataFile)}`).digest('hex');
+if (!process.env.AUTH_SECRET) console.warn('[Security] AUTH_SECRET is not set; using a stable development secret. Set AUTH_SECRET in production.');
 const allowedOrigins = new Set((process.env.ALLOWED_ORIGINS || 'https://forestbrawl.fun,https://www.forestbrawl.fun,http://localhost:3000').split(',').map(origin => origin.trim()).filter(Boolean));
 const worldSeed = 0x4F524553;
 let nextMobId = 1;
