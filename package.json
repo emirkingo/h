@@ -2,6 +2,9 @@
   "name": "forestbrawl-host",
   "private": true,
   "version": "1.0.0",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "start": "node server.js"
   },

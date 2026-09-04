@@ -3,6 +3,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
+const { DatabaseSync } = require('node:sqlite');
 const { Server } = require('socket.io');
 
 const PORT = Number(process.env.PORT || 3000);
@@ -73,6 +74,15 @@ const MOB_TYPES = [
   { shape: 'spider', color: '#2a1a38', outline: '#0f0814', eyes: '#ff1100', typeName: '🕷️ Örümcek', radius: 48, hp: 380, dmg: 34, speed: 17, wanderSpeed: 9, xpReward: 100, goldReward: 45 },
 ];
 const dataFile = process.env.DATA_FILE || path.join(__dirname, 'forest-data.json');
+const databaseFile = process.env.DATABASE_FILE || path.join(__dirname, 'forestbrawl.db');
+let sqliteDb = null;
+try {
+  sqliteDb = new DatabaseSync(databaseFile);
+  sqliteDb.exec('CREATE TABLE IF NOT EXISTS game_state (state_key TEXT PRIMARY KEY, state_json TEXT NOT NULL, updated_at INTEGER NOT NULL)');
+  console.log(`[Database] SQLite ready: ${databaseFile}`);
+} catch (error) {
+  console.warn(`[Database] SQLite unavailable, using JSON fallback: ${error.message}`);
+}
 const authSecret = process.env.AUTH_SECRET || crypto.createHash('sha256').update(`forestbrawl:${path.resolve(dataFile)}`).digest('hex');
 if (!process.env.AUTH_SECRET) console.warn('[Security] AUTH_SECRET is not set; using a stable development secret. Set AUTH_SECRET in production.');
 const allowedOrigins = new Set((process.env.ALLOWED_ORIGINS || 'https://forestbrawl.fun,https://www.forestbrawl.fun,http://localhost:3000').split(',').map(origin => origin.trim()).filter(Boolean));
@@ -138,6 +148,26 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
 
 let accountData = { users: {}, clans: {}, leaderboard: {}, recentDeaths: [], nextId: 1 };
 
+function readSqliteSnapshot() {
+  if (!sqliteDb) return null;
+  try {
+    const row = sqliteDb.prepare('SELECT state_json FROM game_state WHERE state_key = ?').get('account');
+    return row ? JSON.parse(row.state_json) : null;
+  } catch (error) {
+    console.warn(`[Database] SQLite read failed: ${error.message}`);
+    return null;
+  }
+}
+
+function writeSqliteSnapshot(snapshot) {
+  if (!sqliteDb) return;
+  try {
+    sqliteDb.prepare('INSERT INTO game_state (state_key, state_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(state_key) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at').run('account', JSON.stringify(snapshot), Date.now());
+  } catch (error) {
+    console.warn(`[Database] SQLite write failed: ${error.message}`);
+  }
+}
+
 function loadAccountData() {
   const tryLoadFrom = (filePath) => {
     if (!fs.existsSync(filePath)) return null;
@@ -151,7 +181,7 @@ function loadAccountData() {
     }
   };
 
-  let parsed = tryLoadFrom(dataFile) || tryLoadFrom(dataFile + '.bak');
+  let parsed = readSqliteSnapshot() || tryLoadFrom(dataFile) || tryLoadFrom(dataFile + '.bak');
   if (parsed && typeof parsed === 'object') {
     const rawUsers = parsed.users || {};
     const cleanUsers = {};
@@ -197,6 +227,7 @@ function loadAccountData() {
     console.log('[Database] Starting with fresh database.');
     accountData = { users: {}, clans: {}, leaderboard: {}, recentDeaths: [], nextId: 1 };
   }
+  writeSqliteSnapshot(accountData);
 }
 
 loadAccountData();
@@ -217,6 +248,7 @@ function saveAccountData(immediate = false) {
       const dataStr = JSON.stringify(accountData, null, 2);
       const tmpFile = dataFile + '.tmp';
       const bakFile = dataFile + '.bak';
+      writeSqliteSnapshot(accountData);
 
       // Atomic write to tmp file
       _saveInFlight = (async () => {

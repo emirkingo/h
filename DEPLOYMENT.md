@@ -10,6 +10,7 @@ AUTH_SECRET=<generate-secure-random-string>
 PORT=3000
 NODE_ENV=production
 DATA_FILE=/var/data/forest-data.json
+DATABASE_FILE=/var/data/forestbrawl.db
 ```
 
 **To generate a secure AUTH_SECRET:**
@@ -54,6 +55,7 @@ git push -u origin main
    - Mount point: `/var/data`
    - Size: 0.5GB (minimum for game data)
    - Update `DATA_FILE` env var to: `/var/data/forest-data.json`
+   - Set `DATABASE_FILE` to: `/var/data/forestbrawl.db`
 
 ### 4. Deployment
 
@@ -116,10 +118,7 @@ In Render dashboard:
 
 ## Performance Tips
 
-1. **Database**: Currently uses JSON file. For production with many players:
-   - Consider migrating to MongoDB or PostgreSQL
-   - Use Redis for session management
-   - Implement player caching
+1. **Database**: SQLite is initialized automatically on server start. If `forestbrawl.db` is empty, the existing `forest-data.json` is migrated into it. Keep both files on the persistent VDS/Render disk.
 
 2. **Scaling**: 
    - Free tier: ~10-50 concurrent players
@@ -155,6 +154,24 @@ If deployment breaks:
 4. Or revert code in GitHub and push
 
 ## Support
+
+### VDS Terminal Setup
+
+```bash
+cd /path/to/h
+npm ci
+export AUTH_SECRET="$(openssl rand -hex 32)"
+export DATABASE_FILE="$PWD/forestbrawl.db"
+pm2 start server.js --name forestbrawl --update-env
+pm2 save
+```
+
+Check the service and database:
+
+```bash
+curl http://127.0.0.1:3000/api/health
+sqlite3 forestbrawl.db 'SELECT state_key, updated_at FROM game_state;'
+```
 
 - Render Docs: https://render.com/docs
 - Socket.IO: https://socket.io/docs/
