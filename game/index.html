@@ -1163,8 +1163,8 @@
                     <i class="fa-solid fa-store text-sm"></i> SHOP
                 </div>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                    <button class="taming-tab active shop-tab" data-cat="deriler" onclick="setShopTab('deriler')">
-                        <i class="fa-solid fa-shirt"></i> <span>Tüm Deriler</span>
+                    <button class="taming-tab active shop-tab" data-cat="chests" onclick="setShopTab('chests')">
+                        <i class="fa-solid fa-gift"></i> <span>Chestler</span>
                     </button>
                     <button class="taming-tab shop-tab" data-cat="kiliclar" onclick="setShopTab('kiliclar')">
                         <i class="fa-solid fa-khanda"></i> <span>Kılıçlar</span>
@@ -1434,10 +1434,25 @@
             { id: 'ba_tier_6', name: 'Berserker Balta',   img: 'weapons/axe-tier-6.png', tier: 6, cost: 2500, free: false, rarity: 'legendary' }
         ].map(item => item.free || item.cost === 0 ? item : { ...item, cost: normalizeShopPrice(item.cost) });
 
+        const CHEST_REWARD_POOLS = {
+            wood_chest: ['penguin', 'frog', 'croc', 'fox', 'panda', 'rabbit', 'octopus', 'polarbear', 'lion', 'skull', 'ninja', 'robot'],
+            gold_chest: ['dragon', 'phoenix', 'penguin', 'octopus', 'shark', 'skull', 'panda', 'lion', 'yeti', 'robot', 'ninja', 'kiz_orman'],
+            rare_chest: ['dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'yeti', 'robot', 'shark'],
+            ame_chest: ['kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'phoenix', 'dragon']
+        };
+
+        const CHEST_ITEMS = [
+            { id: 'wood_chest', name: 'Wood Chest', img: 'buildassets/windmill_base.png', cost: 180, rarity: 'common', rewardPool: CHEST_REWARD_POOLS.wood_chest },
+            { id: 'gold_chest', name: 'Gold Chest', img: 'buildassets/doors_premium.png', cost: 420, rarity: 'rare', rewardPool: CHEST_REWARD_POOLS.gold_chest },
+            { id: 'rare_chest', name: 'Rare Chest', img: 'buildassets/healpad_premium.png', cost: 850, rarity: 'epic', rewardPool: CHEST_REWARD_POOLS.rare_chest },
+            { id: 'ame_chest', name: 'Ame Chest', img: 'buildassets/turrets_premium.png', cost: 1600, rarity: 'legendary', rewardPool: CHEST_REWARD_POOLS.ame_chest }
+        ];
+
         const ALL_ITEMS_MAP = {
             deriler: REAL_SKINS,
             kiliclar: REAL_SWORDS,
-            baltalar: REAL_AXES
+            baltalar: REAL_AXES,
+            chests: CHEST_ITEMS
         };
 
         const RANKS = ['Tohum', 'Taş', 'Köylü', 'Acemi', 'Savaşçı', 'Muhafız', 'Ateş Efendisi', 'Kristal', 'Fırtına', 'Gece Hanı', 'Efsane', 'Tanrısal'];
@@ -2000,22 +2015,36 @@
             const grid = document.getElementById('cosmetic-owned-grid');
             if (!grid) return;
             grid.innerHTML = '';
-            const allItems = ALL_ITEMS_MAP[_cosmeticTab] || [];
+            const allItems = (ALL_ITEMS_MAP[_cosmeticTab] || []).filter(item => isItemOwned(item));
             const total = allItems.length;
             const startIdx = _cosmeticPage * COSMETICS_PAGE_SIZE;
             const endIdx = Math.min(startIdx + COSMETICS_PAGE_SIZE, total);
             const pageItems = allItems.slice(startIdx, endIdx);
 
             const pageInfo = document.getElementById('cosmetics-page-info');
-            if (pageInfo) pageInfo.textContent = `${startIdx + 1} - ${endIdx} / ${total}`;
+            if (pageInfo) pageInfo.textContent = total ? `${startIdx + 1} - ${endIdx} / ${total}` : '0 - 0 / 0';
 
             const prevBtn = document.getElementById('cosmetics-prev-btn');
             const nextBtn = document.getElementById('cosmetics-next-btn');
             if (prevBtn) prevBtn.style.opacity = _cosmeticPage === 0 ? '0.4' : '1';
             if (nextBtn) nextBtn.style.opacity = endIdx >= total ? '0.4' : '1';
 
+            if (!allItems.length) {
+                const empty = document.createElement('div');
+                empty.className = 'col-span-3 flex items-center justify-center h-40 text-center text-[#f7d596] font-io text-xs border-[3px] border-dashed border-[#7a3f1a] rounded-xl bg-[#2a160b]';
+                empty.innerHTML = '<div><div class="text-lg mb-1">🧰</div><div>Henüz sahip olduğun eşya yok.</div></div>';
+                grid.appendChild(empty);
+                const nameEl = document.getElementById('cosmetic-preview-name');
+                if (nameEl) nameEl.textContent = 'Boş Envanter';
+                const statusEl = document.getElementById('cosmetic-preview-status');
+                if (statusEl) { statusEl.textContent = 'YOK'; statusEl.className = 'font-io text-xs text-white/70 block mb-1 stroke-text'; }
+                const btn = document.getElementById('cosmetic-preview-btn');
+                if (btn) { btn.textContent = 'MAĞAZAYA GİT'; btn.className = 'btn-3d btn-yellow w-full py-2 font-io text-xs stroke-text-dark'; btn.onclick = () => openShopModal(); }
+                return;
+            }
+
             pageItems.forEach(item => {
-                const owned = isItemOwned(item);
+                const owned = true;
                 const isEquipped = (_cosmeticTab === 'deriler') ? (_currentSkin === item.id) : (_equippedWeapon === item.id);
                 const isSelected = _cosmeticPreviewItem && _cosmeticPreviewItem.item.id === item.id;
 
@@ -2023,17 +2052,9 @@
                 card.className = `taming-card relative p-2 rounded-xl border-[3.5px] cursor-pointer flex flex-col items-center justify-between transition-transform duration-75 hover:scale-105 select-none ${
                     isEquipped ? 'bg-[#2a4515] border-[#79d138] shadow-[0_0_12px_rgba(121,209,56,0.5)]' :
                     isSelected ? 'bg-[#502e12] border-[#fce072]' :
-                    owned ? 'bg-[#3b200e] border-[#281204]' : 'bg-[#261306] border-[#1a0c04] opacity-75'
+                    'bg-[#3b200e] border-[#281204]'
                 }`;
                 card.onclick = () => selectCosmeticPreviewItem(item, _cosmeticTab);
-
-                // Asma Kilit Rozeti (Kilitli ise - Screenshot 1 Birebir)
-                if (!owned) {
-                    const lock = document.createElement('div');
-                    lock.className = 'lock-badge';
-                    lock.innerHTML = '<i class="fa-solid fa-lock"></i>';
-                    card.appendChild(lock);
-                }
 
                 const imgWrap = document.createElement('div');
                 imgWrap.className = 'w-14 h-14 my-1 flex items-center justify-center relative';
@@ -2041,7 +2062,7 @@
                 img.src = item.img;
                 img.loading = 'lazy';
                 img.decoding = 'async';
-                img.className = `max-w-full max-h-full object-contain drop-shadow-md ${!owned ? 'grayscale-[50%] brightness-75' : ''}`;
+                img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
                 img.alt = item.name;
                 imgWrap.appendChild(img);
                 card.appendChild(imgWrap);
@@ -2056,7 +2077,7 @@
 
             if (!_cosmeticPreviewItem || _cosmeticPreviewItem.cat !== _cosmeticTab) {
                 const currentEquipped = allItems.find(i => (_cosmeticTab === 'deriler' ? i.id === _currentSkin : i.id === _equippedWeapon)) || allItems[0];
-                selectCosmeticPreviewItem(currentEquipped, _cosmeticTab);
+                if (currentEquipped) selectCosmeticPreviewItem(currentEquipped, _cosmeticTab);
             }
         }
 
@@ -2146,7 +2167,7 @@
 
         function openShopModal() {
             openModal('shopModal');
-            setShopTab(_shopTab);
+            setShopTab('chests');
         }
 
         function setShopTab(cat) {
@@ -2177,6 +2198,92 @@
             }
         }
 
+        function addOwnedItem(itemId) {
+            const owned = getOwnedItems();
+            if (!owned.includes(itemId)) {
+                owned.push(itemId);
+                localStorage.setItem('fb_acc_owned', JSON.stringify(owned));
+            }
+        }
+
+        function ensureChestSpinOverlay() {
+            let overlay = document.getElementById('chest-spin-overlay');
+            if (overlay) return overlay;
+
+            overlay = document.createElement('div');
+            overlay.id = 'chest-spin-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(8, 7, 10, 0.82)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
+            overlay.style.backdropFilter = 'blur(5px)';
+            overlay.innerHTML = `
+                <div style="width:min(90vw, 440px); background:linear-gradient(180deg,#3a1f0a,#140d08); border:4px solid #f2d184; border-radius:24px; box-shadow:0 0 32px rgba(244,175,65,0.45); padding:18px; text-align:center; position:relative; overflow:hidden;">
+                  <div style="position:absolute; inset:0; background:radial-gradient(circle at center, rgba(255,216,111,0.18), rgba(0,0,0,0)); pointer-events:none;"></div>
+                  <div style="position:relative; z-index:1;">
+                    <div style="font-family:Arial, sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#f9d98b; margin-bottom:12px;">CHEST OPENING</div>
+                    <div style="display:flex; align-items:center; justify-content:center; position:relative; margin:18px auto; width:220px; height:220px;">
+                      <div id="chest-spin-ring" style="width:200px; height:200px; border-radius:50%; border:10px solid #f9d98b; background:conic-gradient(from 0deg, #ffb703, #f77f00, #ffcb77, #ffb703, #f77f00, #ffcb77, #ffb703); box-shadow: inset 0 0 25px rgba(255,255,255,0.2), 0 0 30px rgba(255,180,58,0.35); position:absolute; transform:rotate(0deg); transition:transform 2.6s cubic-bezier(0.12, 0.86, 0.19, 1);"></div>
+                      <div style="position:absolute; width:56px; height:56px; background:#1c1009; border:4px solid #f9d98b; border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 18px rgba(255,215,107,0.35);">
+                        <i class="fa-solid fa-gem" style="color:#ffe39a; font-size:24px;"></i>
+                      </div>
+                    </div>
+                    <div id="chest-spin-text" style="font-family:Arial, sans-serif; font-weight:700; font-size:17px; color:#fff5d6; min-height:26px; margin-top:8px;">Şanslı ödül hazırlanıyor...</div>
+                    <div id="chest-spin-reward" style="margin:18px auto 8px; width:120px; height:120px; display:flex; align-items:center; justify-content:center; border-radius:18px; border:3px solid rgba(255,210,122,0.85); background:rgba(31,18,10,0.9); overflow:hidden; opacity:0; transform:scale(0.72); transition:all 260ms ease; box-shadow:0 0 16px rgba(255,210,122,0.25);"></div>
+                    <button id="chest-spin-close" style="margin-top:16px; width:100%; border:none; border-radius:12px; background:linear-gradient(180deg,#f7c35a,#d58a1a); color:#1a1207; font-weight:900; letter-spacing:1px; padding:12px 18px; cursor:pointer; display:none; font-size:13px; text-transform:uppercase;">KAPAT</button>
+                  </div>
+                </div>
+            `;
+            overlay.addEventListener('click', (event) => {
+                if (event.target === overlay) {
+                    overlay.style.display = 'none';
+                }
+            });
+            overlay.querySelector('#chest-spin-close').addEventListener('click', () => overlay.style.display = 'none');
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+
+        function openChestRewardSpin(chest, reward) {
+            const overlay = ensureChestSpinOverlay();
+            const ring = overlay.querySelector('#chest-spin-ring');
+            const textEl = overlay.querySelector('#chest-spin-text');
+            const rewardEl = overlay.querySelector('#chest-spin-reward');
+            const closeBtn = overlay.querySelector('#chest-spin-close');
+
+            const rewardImg = document.createElement('img');
+            rewardImg.src = reward.img;
+            rewardImg.alt = reward.name;
+            rewardImg.style.width = '90px';
+            rewardImg.style.height = '90px';
+            rewardImg.style.objectFit = 'contain';
+            rewardImg.style.filter = 'drop-shadow(0 0 12px rgba(255,214,122,0.35))';
+            rewardEl.innerHTML = '';
+            rewardEl.appendChild(rewardImg);
+            rewardEl.style.opacity = '0';
+            rewardEl.style.transform = 'scale(0.72)';
+
+            textEl.textContent = `${chest.name} açılıyor...`;
+            overlay.style.display = 'flex';
+            closeBtn.style.display = 'none';
+            ring.style.transform = 'rotate(0deg)';
+            requestAnimationFrame(() => {
+                const finalRotation = 1800 + Math.floor(Math.random() * 540);
+                ring.style.transform = `rotate(${finalRotation}deg)`;
+            });
+
+            setTimeout(() => {
+                textEl.textContent = `${reward.name} çıktı!`;
+                rewardEl.style.opacity = '1';
+                rewardEl.style.transform = 'scale(1)';
+                closeBtn.style.display = 'block';
+                triggerToast(`${reward.name} envanterine eklendi!`, 'fa-gift');
+            }, 2400);
+        }
+
         function renderShopAllGrid() {
             const grid = document.getElementById('shop-all-grid');
             if (!grid) return;
@@ -2198,6 +2305,14 @@
             const userGold = getPlayerGold();
             const goldEl = document.getElementById('shop-gold-display');
             if (goldEl) goldEl.textContent = userGold.toLocaleString();
+
+            if (!allItems.length) {
+                const empty = document.createElement('div');
+                empty.className = 'col-span-3 flex items-center justify-center h-40 text-center text-[#f7d596] font-io text-xs border-[3px] border-dashed border-[#7a3f1a] rounded-xl bg-[#2a160b]';
+                empty.innerHTML = '<div><div class="text-lg mb-1">🎁</div><div>Bu kategoride ürün yok.</div></div>';
+                grid.appendChild(empty);
+                return;
+            }
 
             pageItems.forEach(item => {
                 const owned = isItemOwned(item);
@@ -2230,7 +2345,9 @@
 
                 const priceTag = document.createElement('div');
                 priceTag.className = 'mt-1 w-full text-center';
-                if (isEquipped) {
+                if (_shopTab === 'chests') {
+                    priceTag.innerHTML = `<span class="text-[9px] font-io text-amber-300 stroke-text">${item.cost} 🪙</span>`;
+                } else if (isEquipped) {
                     priceTag.innerHTML = '<span class="text-[9px] font-io text-[#79d138] stroke-text">EQUIPPED</span>';
                 } else if (owned) {
                     priceTag.innerHTML = '<span class="text-[9px] font-io text-yellow-300 stroke-text">SAHİPSİN</span>';
@@ -2256,6 +2373,15 @@
             const isEquipped = (cat === 'deriler') ? (_currentSkin === item.id) : (_equippedWeapon === item.id);
             const statusEl = document.getElementById('shop-preview-status');
             const btn = document.getElementById('shop-preview-btn');
+
+            if (cat === 'chests') {
+                statusEl.innerHTML = `FİYAT: ${item.cost} 🪙`;
+                statusEl.className = 'font-io text-xs text-[#FFDF73] block mb-1 stroke-text';
+                btn.innerHTML = `SATIN AL & AÇ (${item.cost} 🪙)`;
+                btn.className = 'btn-3d btn-red w-full py-2 font-io text-xs stroke-text';
+                btn.onclick = () => buyChestItem(item.id, item.cost);
+                return;
+            }
 
             if (isEquipped) {
                 statusEl.textContent = 'EQUIPPED';
@@ -2283,6 +2409,10 @@
             if (_shopPreviewItem) {
                 const item = _shopPreviewItem.item;
                 const cat = _shopPreviewItem.cat;
+                if (cat === 'chests') {
+                    buyChestItem(item.id, item.cost);
+                    return;
+                }
                 if (isItemOwned(item)) {
                     equipCosmeticItem(item.id, cat);
                 } else {
@@ -2291,10 +2421,81 @@
             }
         }
 
+        function getChestReward(chestId) {
+            const chest = CHEST_ITEMS.find(entry => entry.id === chestId);
+            if (!chest || !Array.isArray(chest.rewardPool) || !chest.rewardPool.length) {
+                return REAL_SKINS[Math.floor(Math.random() * REAL_SKINS.length)];
+            }
+            const rewardId = chest.rewardPool[Math.floor(Math.random() * chest.rewardPool.length)];
+            return REAL_SKINS.find(item => item.id === rewardId) || REAL_SKINS[0];
+        }
+
+        async function buyChestItem(chestId, cost) {
+            const chest = CHEST_ITEMS.find(entry => entry.id === chestId);
+            if (!chest) return;
+            const gold = getPlayerGold();
+            if (gold < cost) {
+                triggerToast('Yetersiz altın! Oyun oynayarak kazan.', 'fa-coins');
+                return;
+            }
+
+            const confirmed = window.confirm(`${chest.name} için ${cost} 🪙 ödeyip açmak istiyor musun?`);
+            if (!confirmed) {
+                triggerToast('Chest açma reddedildi.', 'fa-xmark');
+                return;
+            }
+
+            if (_authToken) {
+                try {
+                    const response = await fetch('/api/shop/buy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _authToken },
+                        body: JSON.stringify({ itemId: chestId, cost: cost })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data.success) {
+                        triggerToast(data.error || 'Chest açma başarısız oldu.', 'fa-triangle-exclamation');
+                        return;
+                    }
+                    if (typeof data.newCoins === 'number') setPlayerGold(data.newCoins);
+                } catch (error) {
+                    triggerToast('Sunucu bağlantısı kurulamadı; chest açılamadı.', 'fa-triangle-exclamation');
+                    return;
+                }
+            } else {
+                setPlayerGold(gold - cost);
+            }
+
+            const reward = getChestReward(chestId);
+            addOwnedItem(reward.id);
+            if (_authToken) {
+                try {
+                    const res = await fetch('/api/shop/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _authToken },
+                        body: JSON.stringify({ ownedItems: [reward.id] })
+                    });
+                    if (!res.ok) { /* no-op */ }
+                } catch (error) {}
+            }
+
+            openChestRewardSpin(chest, reward);
+            renderCosmeticsOwnedGrid();
+            renderShopAllGrid();
+            playSfx('buy');
+        }
+
         async function buyShopItem(id, cat, cost) {
             const gold = getPlayerGold();
             if (gold < cost) {
                 triggerToast('Yetersiz altın! Oyun oynayarak kazan.', 'fa-coins');
+                return;
+            }
+
+            const item = (ALL_ITEMS_MAP[cat] || []).find(entry => entry.id === id);
+            const confirmed = window.confirm(`${item ? item.name : 'Eşya'} için ${cost} 🪙 ödeyip satın almak istiyor musun?`);
+            if (!confirmed) {
+                triggerToast('Satın alma reddedildi.', 'fa-xmark');
                 return;
             }
 
@@ -2328,7 +2529,8 @@
 
             equipCosmeticItem(id, cat);
             renderShopAllGrid();
-            triggerToast('Satın Alındı ve Envantere Eklendi!', 'fa-bag-shopping');
+            renderCosmeticsOwnedGrid();
+            triggerToast('Satın alındı ve envantere eklendi!', 'fa-bag-shopping');
             playSfx('buy');
         }
 
