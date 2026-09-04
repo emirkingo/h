@@ -112,10 +112,10 @@ const RANK_NAMES = ['Tohum', 'Taş', 'Köylü', 'Acemi', 'Savaşçı', 'Muhafız
 const RANK_ICONS = ['🌱', '🪨', '🪵', '🏹', '⚔️', '🛡️', '🔥', '💎', '🌪️', '🌙', '👑', '✨'];
 
 const CHEST_CONFIG = {
-  wood_chest: { cost: 180, rewards: ['penguin', 'frog', 'croc', 'fox', 'panda', 'rabbit', 'octopus', 'polarbear', 'lion', 'skull', 'ninja', 'robot'] },
-  gold_chest: { cost: 420, rewards: ['dragon', 'phoenix', 'penguin', 'octopus', 'shark', 'skull', 'panda', 'lion', 'yeti', 'robot', 'ninja', 'kiz_orman'] },
-  rare_chest: { cost: 850, rewards: ['dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'yeti', 'robot', 'shark'] },
-  ame_chest: { cost: 1600, rewards: ['kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'phoenix', 'dragon'] }
+  wood_chest: { cost: 180, rewards: ['penguin', 'frog', 'croc', 'fox', 'panda', 'rabbit', 'skin_desert', 'skin_emerald', 'skin_reef', 'skin_steam', 'skin_blossom', 'robot'] },
+  gold_chest: { cost: 420, rewards: ['dragon', 'phoenix', 'skin_aurora', 'skin_storm', 'skin_sapphire', 'skin_ruby', 'skin_frostwolf', 'skin_cyber', 'yeti', 'robot', 'ninja', 'kiz_orman'] },
+  rare_chest: { cost: 850, rewards: ['dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'skin_void', 'skin_moon', 'skin_amethyst', 'skin_icefire', 'skin_reef', 'skin_shadow', 'skin_thunder', 'yeti', 'robot', 'shark'] },
+  ame_chest: { cost: 1600, rewards: ['kiz_ates', 'kiz_buz', 'kiz_samurai', 'skin_magma', 'skin_solar', 'skin_icefire', 'skin_thunder', 'skin_chroma', 'skin_void', 'kiz_karanlik', 'phoenix', 'dragon'] }
 };
 
 function rankInfo(xp) {

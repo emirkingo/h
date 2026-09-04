@@ -346,6 +346,7 @@
         .quest-reward-pop { animation: questRewardPop .7s cubic-bezier(.16,1,.3,1) both; }
         @keyframes questRewardClaim { 50% { transform:scale(1.12) rotate(-2deg); filter:brightness(1.7); } 100% { transform:scale(.9); opacity:.35; } }
         @keyframes questRewardPop { 0% { opacity:0; transform:translate(-50%,-45%) scale(.55); } 65% { opacity:1; transform:translate(-50%,-50%) scale(1.06); } 100% { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+        @keyframes chestSpark { 0% { opacity:1; transform:translate(-50%,-50%) scale(.4) rotate(0deg); } 100% { opacity:0; transform:translate(calc(-50% + var(--sx)),calc(-50% + var(--sy))) scale(1.25) rotate(180deg); } }
         .quest-reward-particle { position:absolute; font-size:22px; animation:questParticle 1s ease-out forwards; }
         @keyframes questParticle { from { opacity:1; transform:translate(0,0) scale(1); } to { opacity:0; transform:translate(var(--dx),var(--dy)) scale(.5); } }
 
@@ -1410,8 +1411,32 @@
             { id: 'kiz_orman',   name: 'Orman Muhafızı',  img: 'players/kiz_orman.png',   rarity: 'legendary', free: false, cost: 1500 },
             { id: 'kiz_deniz',   name: 'Deniz Savaşçısı', img: 'players/kiz_deniz.png',   rarity: 'legendary', free: false, cost: 1600 },
             { id: 'kiz_sakura',  name: 'Sakura Çiçeği',   img: 'players/kiz_sakura.png',  rarity: 'legendary', free: false, cost: 1700 },
-            { id: 'kiz_karanlik',name: 'Karanlık Cadı',   img: 'players/kiz_karanlik.png',rarity: 'legendary', free: false, cost: 2400 }
+            { id: 'kiz_karanlik',name: 'Karanlık Cadı',   img: 'players/kiz_karanlik.png',rarity: 'legendary', free: false, cost: 2400 },
+            ...[
+                ['skin_aurora', 'Aurora Muhafızı', 'epic', '#65f5d8', '#164c68', '#d8fff5'],
+                ['skin_storm', 'Fırtına Ruhu', 'epic', '#79a9ff', '#1a2d72', '#e5efff'],
+                ['skin_magma', 'Magma Golemi', 'legendary', '#ff704d', '#6d160e', '#ffe0a3'],
+                ['skin_void', 'Boşluk Gezgini', 'legendary', '#bd7cff', '#241044', '#f4d9ff'],
+                ['skin_solar', 'Güneş Şövalyesi', 'legendary', '#ffd45a', '#9b3e10', '#fff5b8'],
+                ['skin_moon', 'Ay Muhafızı', 'epic', '#b6c8ff', '#293768', '#f0f4ff'],
+                ['skin_emerald', 'Zümrüt Avcısı', 'rare', '#64e08a', '#18542e', '#dcffe5'],
+                ['skin_sapphire', 'Safir Savaşçı', 'rare', '#55c7ef', '#144f78', '#d8f7ff'],
+                ['skin_ruby', 'Yakut Kralı', 'epic', '#ff5c70', '#6d1425', '#ffe1e5'],
+                ['skin_amethyst', 'Ametist Büyücüsü', 'epic', '#d081ff', '#4b1c72', '#f6ddff'],
+                ['skin_cyber', 'Siber Avcı', 'legendary', '#5affd1', '#123638', '#d8fff7'],
+                ['skin_steam', 'Buhar Pilotu', 'rare', '#d8a878', '#5a3420', '#fff0d4'],
+                ['skin_icefire', 'Buzateş Ejderi', 'legendary', '#75eaff', '#6c2416', '#fff0bf'],
+                ['skin_thunder', 'Gök Gürültüsü', 'legendary', '#fff06a', '#3b327d', '#ffffdc'],
+                ['skin_blossom', 'Çiçek Ruh', 'rare', '#ff9fc7', '#6b2851', '#ffe7f2'],
+                ['skin_reef', 'Mercan Savaşçısı', 'rare', '#6de0c0', '#1a5960', '#d9fff6'],
+                ['skin_desert', 'Çöl Yağmacısı', 'common', '#e6b35f', '#70401b', '#fff0b0'],
+                ['skin_frostwolf', 'Buzkurdu', 'epic', '#b7ecff', '#254d72', '#f0fcff'],
+                ['skin_shadow', 'Gölge Pençesi', 'epic', '#a58aff', '#1d173c', '#e5ddff'],
+                ['skin_chroma', 'Kroma Şampiyonu', 'legendary', '#ff83df', '#30205e', '#ffffff']
+            ].map(([id, name, rarity, primary, dark, shine]) => ({ id, name, img: '', rarity, free: false, cost: 1, generated: true, primary, dark, shine }))
         ].map(item => item.free || item.cost === 0 ? item : { ...item, cost: normalizeShopPrice(item.cost) });
+
+        const GENERATED_SKIN_STYLES = Object.fromEntries(REAL_SKINS.filter(item => item.generated).map(item => [item.id, item]));
 
         // Oyun İçi El/Kol Renkleri Haritası (play.html ile %100 aynı)
         const SKIN_ARM_COLORS = {
@@ -1448,10 +1473,10 @@
         ].map(item => item.free || item.cost === 0 ? item : { ...item, cost: normalizeShopPrice(item.cost) });
 
         const CHEST_REWARD_POOLS = {
-            wood_chest: ['penguin', 'frog', 'croc', 'fox', 'panda', 'rabbit', 'octopus', 'polarbear', 'lion', 'skull', 'ninja', 'robot'],
-            gold_chest: ['dragon', 'phoenix', 'penguin', 'octopus', 'shark', 'skull', 'panda', 'lion', 'yeti', 'robot', 'ninja', 'kiz_orman'],
-            rare_chest: ['dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'yeti', 'robot', 'shark'],
-            ame_chest: ['kiz_ates', 'kiz_buz', 'kiz_samurai', 'kiz_peri', 'kiz_neon', 'kiz_vampir', 'kiz_deniz', 'kiz_sakura', 'kiz_karanlik', 'phoenix', 'dragon']
+            wood_chest: ['penguin', 'frog', 'croc', 'fox', 'panda', 'rabbit', 'skin_desert', 'skin_emerald', 'skin_reef', 'skin_steam', 'skin_blossom', 'robot'],
+            gold_chest: ['dragon', 'phoenix', 'skin_aurora', 'skin_storm', 'skin_sapphire', 'skin_ruby', 'skin_frostwolf', 'skin_cyber', 'yeti', 'robot', 'ninja', 'kiz_orman'],
+            rare_chest: ['dragon', 'phoenix', 'kiz_ates', 'kiz_buz', 'skin_void', 'skin_moon', 'skin_amethyst', 'skin_icefire', 'skin_reef', 'skin_shadow', 'skin_thunder', 'yeti', 'robot', 'shark'],
+            ame_chest: ['kiz_ates', 'kiz_buz', 'kiz_samurai', 'skin_magma', 'skin_solar', 'skin_icefire', 'skin_thunder', 'skin_chroma', 'skin_void', 'kiz_karanlik', 'phoenix', 'dragon']
         };
 
         const CHEST_ITEMS = [
@@ -2166,13 +2191,20 @@
 
                 const imgWrap = document.createElement('div');
                 imgWrap.className = 'w-14 h-14 my-1 flex items-center justify-center relative';
-                const img = document.createElement('img');
-                img.src = item.img;
-                img.loading = 'lazy';
-                img.decoding = 'async';
-                img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
-                img.alt = item.name;
-                imgWrap.appendChild(img);
+                if (item.generated) {
+                    const skinCanvas = document.createElement('canvas');
+                    skinCanvas.width = 96; skinCanvas.height = 96;
+                    drawGeneratedSkin(skinCanvas.getContext('2d'), 48, 48, item.id, _animFrame, .62);
+                    imgWrap.appendChild(skinCanvas);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = item.img;
+                    img.loading = 'lazy';
+                    img.decoding = 'async';
+                    img.className = 'max-w-full max-h-full object-contain drop-shadow-md';
+                    img.alt = item.name;
+                    imgWrap.appendChild(img);
+                }
                 card.appendChild(imgWrap);
 
                 const nameSpan = document.createElement('span');
@@ -2338,7 +2370,7 @@
                   <div style="position:relative; z-index:1;">
                     <div style="font-family:Arial, sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#f9d98b; margin-bottom:12px;">CHEST OPENING</div>
                     <div style="display:flex; align-items:center; justify-content:center; position:relative; margin:18px auto; width:220px; height:220px;">
-                      <div id="chest-spin-ring" style="width:200px; height:200px; border-radius:50%; border:10px solid #f9d98b; background:conic-gradient(from 0deg, #ffb703, #f77f00, #ffcb77, #ffb703, #f77f00, #ffcb77, #ffb703); box-shadow: inset 0 0 25px rgba(255,255,255,0.2), 0 0 30px rgba(255,180,58,0.35); position:absolute; transform:rotate(0deg); transition:transform 2.6s cubic-bezier(0.12, 0.86, 0.19, 1);"></div>
+                      <div id="chest-spin-ring" style="width:200px; height:200px; border-radius:50%; border:10px solid #f9d98b; background:conic-gradient(from 0deg, #ffb703, #f77f00, #ffcb77, #ffb703, #f77f00, #ffcb77, #ffb703); box-shadow: inset 0 0 25px rgba(255,255,255,0.2), 0 0 30px rgba(255,180,58,0.35); position:absolute; transform:rotate(0deg); transition:transform 4.2s cubic-bezier(0.12, 0.86, 0.19, 1);"></div>
                       <div style="position:absolute; width:56px; height:56px; background:#1c1009; border:4px solid #f9d98b; border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 18px rgba(255,215,107,0.35);">
                         <i class="fa-solid fa-gem" style="color:#ffe39a; font-size:24px;"></i>
                       </div>
@@ -2369,21 +2401,31 @@
             const closeBtn = overlay.querySelector('#chest-spin-close');
 
             const candidates = (chest.rewardPool || []).map(id => REAL_SKINS.find(item => item.id === id)).filter(Boolean);
-            candidatesEl.innerHTML = candidates.map(item => `<img src="${item.img}" alt="${item.name}" title="${item.name}" style="width:34px;height:34px;object-fit:contain;border:2px solid rgba(255,220,140,.45);border-radius:8px;background:rgba(0,0,0,.25);padding:2px;">`).join('');
+            candidatesEl.innerHTML = candidates.map((item, index) => item.generated
+                ? `<canvas data-candidate-index="${index}" width="42" height="42" title="${item.name}" style="width:34px;height:34px;border:2px solid rgba(255,220,140,.45);border-radius:8px;background:rgba(0,0,0,.25);padding:2px;"></canvas>`
+                : `<img data-candidate-index="${index}" src="${item.img}" alt="${item.name}" title="${item.name}" style="width:34px;height:34px;object-fit:contain;border:2px solid rgba(255,220,140,.45);border-radius:8px;background:rgba(0,0,0,.25);padding:2px;">`).join('');
+            candidates.forEach((item, index) => {
+                if (!item.generated) return;
+                const canvas = candidatesEl.querySelector(`[data-candidate-index="${index}"]`);
+                if (canvas) drawGeneratedSkin(canvas.getContext('2d'), 21, 21, item.id, _animFrame, .26);
+            });
 
-            const rewardImg = document.createElement('img');
-            rewardImg.src = reward.img;
-            rewardImg.alt = reward.name;
-            rewardImg.style.width = '90px';
-            rewardImg.style.height = '90px';
-            rewardImg.style.objectFit = 'contain';
+            const rewardImg = reward.generated ? document.createElement('canvas') : document.createElement('img');
+            if (reward.generated) {
+                rewardImg.width = 110; rewardImg.height = 110;
+                drawGeneratedSkin(rewardImg.getContext('2d'), 55, 55, reward.id, _animFrame, .82);
+            } else {
+                rewardImg.src = reward.img;
+                rewardImg.alt = reward.name;
+            }
+            rewardImg.style.width = '90px'; rewardImg.style.height = '90px'; rewardImg.style.objectFit = 'contain';
             rewardImg.style.filter = 'drop-shadow(0 0 12px rgba(255,214,122,0.35))';
             rewardEl.innerHTML = '';
             rewardEl.appendChild(rewardImg);
             rewardEl.style.opacity = '0';
             rewardEl.style.transform = 'scale(0.72)';
 
-            textEl.textContent = `${chest.name} açılıyor...`;
+            textEl.textContent = `${chest.name} kilidi açılıyor...`;
             overlay.style.display = 'flex';
             closeBtn.style.display = 'none';
             ring.style.transform = 'rotate(0deg)';
@@ -2392,11 +2434,14 @@
                 const candidateImages = candidatesEl.querySelectorAll('img');
                 candidateImages.forEach((image, index) => { image.style.borderColor = index === candidateIndex ? '#fff2ad' : 'rgba(255,220,140,.45)'; image.style.transform = index === candidateIndex ? 'scale(1.18)' : 'scale(1)'; });
                 candidateIndex = (candidateIndex + 1) % Math.max(1, candidateImages.length);
-            }, 120);
+            }, 95);
             requestAnimationFrame(() => {
-                const finalRotation = 1800 + Math.floor(Math.random() * 540);
+                const finalRotation = 2880 + Math.floor(Math.random() * 720);
                 ring.style.transform = `rotate(${finalRotation}deg)`;
             });
+
+            setTimeout(() => { textEl.textContent = 'Ödül havuzu taranıyor...'; }, 1100);
+            setTimeout(() => { textEl.textContent = 'Nadirlik hesaplanıyor...'; }, 2300);
 
             setTimeout(() => {
                 clearInterval(candidateTimer);
@@ -2404,8 +2449,15 @@
                 rewardEl.style.opacity = '1';
                 rewardEl.style.transform = 'scale(1)';
                 closeBtn.style.display = 'block';
+                for (let index = 0; index < 18; index++) {
+                    const spark = document.createElement('span');
+                    spark.textContent = index % 2 ? '✦' : '◆';
+                    spark.style.cssText = `position:fixed;left:50%;top:50%;color:${index % 2 ? '#fff2a8' : '#ff9f43'};font-size:${10 + index % 4 * 4}px;pointer-events:none;z-index:2;transform:translate(-50%,-50%);animation:chestSpark 900ms ease-out forwards;--sx:${Math.cos(index * Math.PI / 9) * (90 + index * 3)}px;--sy:${Math.sin(index * Math.PI / 9) * (70 + index * 2)}px;`;
+                    overlay.appendChild(spark);
+                    setTimeout(() => spark.remove(), 950);
+                }
                 triggerToast(`${reward.name} envanterine eklendi!`, 'fa-gift');
-            }, 2400);
+            }, 4200);
         }
 
         function renderShopAllGrid() {
@@ -3325,6 +3377,30 @@
         }));
 
         // OYUN İÇİ İLE %100 BİREBİR VE SAĞA BAKAN CANLI ÇİZİM MOTORU
+        function drawGeneratedSkin(ctx, cx, cy, skinId, t, scale = 1) {
+            const style = GENERATED_SKIN_STYLES[skinId];
+            if (!ctx || !style) return false;
+            const radius = 36 * scale;
+            const pulse = .72 + Math.sin(t * .08) * .12;
+            ctx.save(); ctx.translate(cx, cy);
+            ctx.shadowColor = style.primary; ctx.shadowBlur = 14 * scale * pulse;
+            const gradient = ctx.createRadialGradient(-radius * .25, -radius * .3, 2, 0, 0, radius * 1.2);
+            gradient.addColorStop(0, style.shine); gradient.addColorStop(.34, style.primary); gradient.addColorStop(1, style.dark);
+            ctx.fillStyle = gradient; ctx.strokeStyle = style.shine; ctx.lineWidth = 3 * scale;
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = style.dark; ctx.beginPath(); ctx.moveTo(-radius * .75, -radius * .55); ctx.lineTo(-radius * .38, -radius * 1.05); ctx.lineTo(-radius * .05, -radius * .58); ctx.closePath(); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(radius * .05, -radius * .58); ctx.lineTo(radius * .42, -radius * 1.05); ctx.lineTo(radius * .75, -radius * .55); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(radius * .25, -radius * .18, radius * .15, radius * .13, 0, 0, Math.PI * 2); ctx.ellipse(radius * .25, radius * .18, radius * .15, radius * .13, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = style.primary; ctx.beginPath(); ctx.arc(radius * .29, -radius * .18, radius * .08, 0, Math.PI * 2); ctx.arc(radius * .29, radius * .18, radius * .08, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = style.shine; ctx.beginPath(); ctx.arc(radius * .34, -radius * .18, radius * .035, 0, Math.PI * 2); ctx.arc(radius * .34, radius * .18, radius * .035, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = style.dark; ctx.beginPath(); ctx.ellipse(radius * .63, 0, radius * .22, radius * .15, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = style.shine; ctx.beginPath(); ctx.arc(radius * .72, 0, radius * .055, 0, Math.PI * 2); ctx.fill();
+            for (let index = 0; index < 5; index++) { const angle = t * .025 + index * Math.PI * .4; ctx.fillStyle = style.shine; ctx.globalAlpha = .45 + Math.sin(t * .1 + index) * .2; ctx.beginPath(); ctx.arc(Math.cos(angle) * radius * 1.15, Math.sin(angle) * radius * 1.15, radius * .045, 0, Math.PI * 2); ctx.fill(); }
+            ctx.globalAlpha = 1; ctx.restore();
+            return true;
+        }
+
         function drawExactInGamePlayer(ctx, cx, cy, skinId, weaponId, t, scale = 0.7) {
             if (!ctx) return;
             const skinImg = getLoadedImage(`players/${skinId}.png`);
@@ -3379,7 +3455,9 @@
             }
 
             // 4. Gövde
-            if (skinImg && skinImg.complete && skinImg.naturalWidth > 0) {
+            if (GENERATED_SKIN_STYLES[skinId]) {
+                drawGeneratedSkin(ctx, 0, 0, skinId, t, 1);
+            } else if (skinImg && skinImg.complete && skinImg.naturalWidth > 0) {
                 ctx.drawImage(skinImg, -63, -63, 126, 126);
             } else {
                 ctx.fillStyle = armCol;

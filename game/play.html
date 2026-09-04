@@ -11344,10 +11344,33 @@ function drawPlayerBackpack(ctx, r) {
 // ============================================================
 // PLAYER SKIN DRAWING SYSTEM — 18 unique canvas-drawn skins
 // ============================================================
+const GENERATED_SKIN_STYLES = {
+  skin_aurora:['#65f5d8','#164c68','#d8fff5'], skin_storm:['#79a9ff','#1a2d72','#e5efff'], skin_magma:['#ff704d','#6d160e','#ffe0a3'], skin_void:['#bd7cff','#241044','#f4d9ff'], skin_solar:['#ffd45a','#9b3e10','#fff5b8'], skin_moon:['#b6c8ff','#293768','#f0f4ff'], skin_emerald:['#64e08a','#18542e','#dcffe5'], skin_sapphire:['#55c7ef','#144f78','#d8f7ff'], skin_ruby:['#ff5c70','#6d1425','#ffe1e5'], skin_amethyst:['#d081ff','#4b1c72','#f6ddff'], skin_cyber:['#5affd1','#123638','#d8fff7'], skin_steam:['#d8a878','#5a3420','#fff0d4'], skin_icefire:['#75eaff','#6c2416','#fff0bf'], skin_thunder:['#fff06a','#3b327d','#ffffdc'], skin_blossom:['#ff9fc7','#6b2851','#ffe7f2'], skin_reef:['#6de0c0','#1a5960','#d9fff6'], skin_desert:['#e6b35f','#70401b','#fff0b0'], skin_frostwolf:['#b7ecff','#254d72','#f0fcff'], skin_shadow:['#a58aff','#1d173c','#e5ddff'], skin_chroma:['#ff83df','#30205e','#ffffff']
+};
+function drawGeneratedSkinBody(c, R, sk, t, fl) {
+  const style = GENERATED_SKIN_STYLES[sk];
+  if (!style) return false;
+  const [primary, dark, shine] = style;
+  const pulse = .75 + Math.sin(t * .08) * .12;
+  c.save(); c.shadowColor = fl ? '#fff' : primary; c.shadowBlur = 12 * pulse;
+  const body = c.createRadialGradient(-R*.25, -R*.3, 2, 0, 0, R*1.2);
+  body.addColorStop(0, fl ? '#fff' : shine); body.addColorStop(.34, fl ? '#fff' : primary); body.addColorStop(1, fl ? '#ccc' : dark);
+  c.fillStyle = body; c.strokeStyle = fl ? '#fff' : shine; c.lineWidth = 3;
+  c.beginPath(); c.arc(0, 0, R, 0, Math.PI*2); c.fill(); c.stroke(); c.shadowBlur = 0;
+  c.fillStyle = fl ? '#fff' : dark;
+  c.beginPath(); c.moveTo(-R*.75,-R*.55); c.lineTo(-R*.38,-R*1.05); c.lineTo(-R*.05,-R*.58); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(R*.05,-R*.58); c.lineTo(R*.42,-R*1.05); c.lineTo(R*.75,-R*.55); c.closePath(); c.fill();
+  for (const s of [-1, 1]) { c.fillStyle='#fff'; c.beginPath(); c.ellipse(R*.25,s*R*.18,R*.15,R*.13,0,0,Math.PI*2); c.fill(); c.fillStyle=fl?'#fff':primary; c.beginPath(); c.arc(R*.29,s*R*.18,R*.08,0,Math.PI*2); c.fill(); c.fillStyle=fl?'#fff':shine; c.beginPath(); c.arc(R*.34,s*R*.18,R*.035,0,Math.PI*2); c.fill(); }
+  c.fillStyle = fl ? '#fff' : dark; c.beginPath(); c.ellipse(R*.63,0,R*.22,R*.15,0,0,Math.PI*2); c.fill(); c.fillStyle=fl?'#fff':shine; c.beginPath(); c.arc(R*.72,0,R*.055,0,Math.PI*2); c.fill();
+  for (let i=0;i<5;i++) { const a=t*.025+i*Math.PI*.4; c.fillStyle=fl?'#fff':shine; c.globalAlpha=.45+Math.sin(t*.1+i)*.2; c.beginPath(); c.arc(Math.cos(a)*R*1.15,Math.sin(a)*R*1.15,R*.045,0,Math.PI*2); c.fill(); }
+  c.globalAlpha=1; c.restore(); return true;
+}
 function drawSkinBody(c,R,sk,t,fl){
   // fl=flash(hit-white), sk=skinId, t=globalTime, R=radius
   // All skins drawn at (0,0) facing right (+X direction)
-  if(sk==='panda'){
+  if(GENERATED_SKIN_STYLES[sk]){
+    drawGeneratedSkinBody(c,R,sk,t,fl);
+  } else if(sk==='panda'){
     // 1. EARS — drawn first so body covers the base (ears behind body)
     c.fillStyle=fl?'#aaa':'#111';c.strokeStyle='#000';c.lineWidth=3;
     c.beginPath();c.arc(-R*.82,-R*.2,R*.26,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.arc(-R*.82,R*.2,R*.26,0,Math.PI*2);c.fill();c.stroke();
