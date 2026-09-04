@@ -1483,6 +1483,24 @@
             return img;
         }
 
+        function redrawCosmeticPreviews() {
+            const canvases = [
+                ['cosmetic-preview-canvas', _cosmeticPreviewItem],
+                ['shop-preview-canvas', _shopPreviewItem]
+            ];
+            canvases.forEach(([canvasId, selection]) => {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                const context = canvas.getContext('2d');
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                const skinId = selection?.cat === 'deriler' ? selection.item.id : _currentSkin;
+                const weaponId = selection && (selection.cat === 'baltalar' || selection.cat === 'kiliclar')
+                    ? selection.item.id
+                    : _equippedWeapon;
+                drawExactInGamePlayer(context, 95, 125, skinId, weaponId, _animFrame, 0.74);
+            });
+        }
+
         REAL_SKINS.forEach(s => getLoadedImage(s.img));
         REAL_SWORDS.forEach(s => getLoadedImage(s.img));
         REAL_AXES.forEach(s => getLoadedImage(s.img));
@@ -2082,7 +2100,9 @@
         }
 
         function selectCosmeticPreviewItem(item, cat) {
+            if (!item) return;
             _cosmeticPreviewItem = { item, cat };
+            if (item.img) getLoadedImage(item.img).onload = redrawCosmeticPreviews;
             const nameEl = document.getElementById('cosmetic-preview-name');
             if (nameEl) nameEl.textContent = item.name;
 
@@ -2114,6 +2134,7 @@
                     selectShopPreviewItem(item, cat);
                 };
             }
+            redrawCosmeticPreviews();
             playSfx('click');
         }
 
@@ -2143,6 +2164,7 @@
                 localStorage.setItem('fb_weapon_skin', id);
                 localStorage.setItem('fb_acc_equipped', JSON.stringify(shopAcc));
             }
+            redrawCosmeticPreviews();
             persistPlayerProfileState();
             
             if (_authToken) {
