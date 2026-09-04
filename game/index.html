@@ -654,6 +654,19 @@
                         <span id="header-rank" class="text-[9px] font-black text-[#F7C02D] leading-none">Lv.1 Tohum</span>
                     </div>
                 </button>
+                <div id="header-profile-hud" class="hidden sm:flex items-center gap-2 panel-inset px-2.5 py-1 border-[2px] min-w-[190px]" aria-label="Profil durumu">
+                    <div class="flex flex-col min-w-0 leading-none">
+                        <span id="header-profile-name" class="font-io text-[10px] text-white truncate max-w-[92px]">Oyuncu</span>
+                        <span id="header-profile-id" class="text-[8px] text-white/60 font-black">ID: --</span>
+                    </div>
+                    <div class="w-[82px] flex flex-col gap-0.5">
+                        <div class="h-4 rounded-full bg-black/70 border border-black overflow-hidden relative shadow-inner">
+                            <div id="header-xp-bar" class="h-full bg-gradient-to-r from-[#79D138] to-[#b9f35d] transition-all duration-500" style="width:0%"></div>
+                            <span id="header-level" class="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white stroke-text">LV.1</span>
+                        </div>
+                        <span id="header-xp-text" class="text-[7px] text-[#d8f7aa] text-center font-black">0 XP</span>
+                    </div>
+                </div>
                 <div class="panel-inset px-2.5 py-1 flex items-center gap-1.5 border-[2px]">
                     <i class="fa-solid fa-coins text-yellow-400 text-xs"></i>
                     <span id="header-gold" class="font-io text-xs text-[#FFDF73] stroke-text">1,500</span>
@@ -675,7 +688,7 @@
                     </div>
                     <div class="bg-black/50 border border-[#1F1108] px-1.5 py-0.5 rounded text-[9px] font-black text-[#79D138] ml-1 flex items-center gap-1">
                         <i class="fa-solid fa-signal text-[9px]"></i>
-                        <span id="header-ping">14ms</span>
+                        <span id="header-ping">--</span>
                     </div>
                 </div>
             </div>
@@ -1073,7 +1086,7 @@
 
                         <div class="col-span-1 flex items-center justify-center gap-1">
                             <i class="fa-solid fa-signal text-[#79D138] text-xs"></i>
-                            <span id="modal-server-ping" class="text-white font-black text-xs">14ms</span>
+                            <span id="modal-server-ping" class="text-white font-black text-xs">--</span>
                         </div>
 
                         <div class="col-span-1 flex justify-center">
@@ -1678,6 +1691,26 @@
         /* ════════════════════════════════════════════════════════════════
            5. SUNUCU & PING
         ════════════════════════════════════════════════════════════════ */
+        function updateHeaderProfile(user = _authUser) {
+            const hud = document.getElementById('header-profile-hud');
+            if (!hud || !user) return;
+            const xp = Math.max(0, Number(user.xp ?? getPlayerTotalXp()) || 0);
+            const rankId = getRankIdByXp(xp);
+            const currentBase = RANK_XP_THRESHOLDS[rankId] ?? 0;
+            const nextBase = RANK_XP_THRESHOLDS[Math.min(rankId + 1, RANK_XP_THRESHOLDS.length - 1)] ?? currentBase;
+            const percent = rankId >= RANK_XP_THRESHOLDS.length - 1 ? 100 : Math.round(Math.max(0, Math.min(1, (xp - currentBase) / Math.max(1, nextBase - currentBase))) * 100);
+            const nameEl = document.getElementById('header-profile-name');
+            const idEl = document.getElementById('header-profile-id');
+            const levelEl = document.getElementById('header-level');
+            const xpBar = document.getElementById('header-xp-bar');
+            const xpText = document.getElementById('header-xp-text');
+            if (nameEl) nameEl.textContent = String(user.username || 'Oyuncu');
+            if (idEl) idEl.textContent = `ID: ${user.id ?? '--'}`;
+            if (levelEl) levelEl.textContent = `LV.${rankId + 1}`;
+            if (xpBar) xpBar.style.width = `${percent}%`;
+            if (xpText) xpText.textContent = rankId >= RANK_XP_THRESHOLDS.length - 1 ? `${xp.toLocaleString()} XP` : `${xp.toLocaleString()} / ${nextBase.toLocaleString()} XP`;
+        }
+
         function pingServer() {
             const t0 = performance.now();
             fetch('/api/health')
@@ -1694,7 +1727,11 @@
                 })
                 .catch(() => {
                     const hp = document.getElementById('header-ping');
-                    if (hp) hp.textContent = '14ms';
+                    if (hp) hp.textContent = '--';
+                    const mp = document.getElementById('modal-server-ping');
+                    if (mp) mp.textContent = '--';
+                    const mo = document.getElementById('modal-online-text');
+                    if (mo) mo.textContent = 'Sunucuya ulaşılamıyor';
                 });
         }
 
@@ -1725,6 +1762,7 @@
             localStorage.setItem('fb_weapon_skin', _equippedWeapon);
             if (_authUser) {
                 localStorage.setItem('fb_auth_user', JSON.stringify({ ..._authUser, username: _authUser.username, xp, coins: snapshot.gold, gold: snapshot.gold, rankId: snapshot.rankId, ownedItems: owned, equippedItems: equipped }));
+                updateHeaderProfile({ ..._authUser, xp, ownedItems: owned, equippedItems: equipped });
             }
         }
 
@@ -1743,6 +1781,7 @@
                 if (savedEquipped.kiliclar || savedEquipped.baltalar) _equippedWeapon = savedEquipped.kiliclar || savedEquipped.baltalar || _equippedWeapon;
                 if (user) {
                     _currentUser = user;
+                    updateHeaderProfile(user);
                     if (user.settings && typeof user.settings === 'object') {
                         Object.entries(user.settings).forEach(([key, value]) => localStorage.setItem(key, String(value)));
                     }
@@ -1982,6 +2021,7 @@
             document.getElementById('prof-best-score').textContent = (u.bestScore || u.score || 0).toLocaleString();
             document.getElementById('prof-games').textContent = (u.gamesPlayed || u.games || 0).toLocaleString();
             document.getElementById('prof-coins').textContent = (u.coins != null ? u.coins : getPlayerGold()).toLocaleString();
+            updateHeaderProfile(u);
 
             const pImg = document.getElementById('prof-avatar-img');
             if (pImg) pImg.src = `players/${_currentSkin}.png`;
