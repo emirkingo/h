@@ -907,7 +907,7 @@
                         <div class="flex items-center gap-2 mt-1 flex-wrap">
                             <span id="prof-rank-name" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-2 py-0.5 rounded font-io text-xs shadow">Lv.1 Tohum</span>
                             <span id="prof-rank-icon" class="bg-black/50 px-2 py-0.5 rounded text-[10px] text-yellow-300 font-black border border-yellow-500/40">🌱</span>
-                            <span id="prof-gold-badge" class="bg-black/50 px-2 py-0.5 rounded text-[10px] text-[#FFDF73] font-black border border-yellow-500/40">🪙 1,500</span>
+                            <span id="prof-gold-badge" class="bg-black/50 px-2 py-0.5 rounded text-[10px] text-[#FFDF73] font-black border border-yellow-500/40"><i class="fa-solid fa-coins text-[#F7C02D]"></i> 1,500</span>
                         </div>
                         <div id="prof-next-rank" class="text-[10px] font-black text-[#9FE870] mt-1">➡️ 🪨 Taş: 350 XP kaldı</div>
                     </div>
@@ -1208,7 +1208,7 @@
                     </div>
                     
                     <div class="w-full text-center z-10">
-                        <span id="shop-preview-status" class="font-io text-xs text-yellow-400 block mb-1 stroke-text">COST: 0 🪙</span>
+                        <span id="shop-preview-status" class="font-io text-xs text-yellow-400 block mb-1 stroke-text">COST: 0 <i class="fa-solid fa-coins text-[#F7C02D]"></i></span>
                         <button id="shop-preview-btn" onclick="buyCurrentShopItem()" class="btn-3d btn-yellow w-full py-2 font-io text-xs stroke-text-dark">
                             SATIN AL
                         </button>
@@ -1971,7 +1971,7 @@
                     closeAllModals();
                     checkAuthStatus();
                     hydratePlayerProfileState(_authUser);
-                    triggerToast(`Tebrikler ${_authUser.username}! +300 🪙 Altın Hesabına Yüklendi!`, 'fa-sparkles');
+                    triggerToast(`Tebrikler ${_authUser.username}! +300 <i class="fa-solid fa-coins"></i> altın hesabına yüklendi!`, 'fa-sparkles');
                     playSfx('buy');
                 } else {
                     triggerToast(data.error || 'Kayıt başarısız.', 'fa-circle-xmark');
@@ -2068,7 +2068,9 @@
             document.getElementById('prof-kd').textContent = kd;
             document.getElementById('prof-best-score').textContent = (u.bestScore || u.score || 0).toLocaleString();
             document.getElementById('prof-games').textContent = (u.gamesPlayed || u.games || 0).toLocaleString();
-            document.getElementById('prof-coins').textContent = (u.coins != null ? u.coins : getPlayerGold()).toLocaleString();
+            const profileGold = u.coins != null ? u.coins : getPlayerGold();
+            document.getElementById('prof-coins').innerHTML = `${profileGold.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i>`;
+            document.getElementById('prof-gold-badge').innerHTML = `<i class="fa-solid fa-coins text-[#F7C02D]"></i> ${profileGold.toLocaleString()}`;
             updateHeaderProfile(u);
 
             const pImg = document.getElementById('prof-avatar-img');
@@ -2212,9 +2214,9 @@
                 btn.className = 'btn-3d btn-play w-full py-2 font-io text-xs stroke-text';
                 btn.onclick = () => equipCosmeticItem(item.id, cat);
             } else {
-                statusEl.innerHTML = `<i class="fa-solid fa-lock text-xs mr-1"></i>KİLİTLİ (${item.cost} 🪙)`;
+                statusEl.innerHTML = `<i class="fa-solid fa-lock text-xs mr-1"></i>KİLİTLİ (${item.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i>)`;
                 statusEl.className = 'font-io text-xs text-amber-300 block mb-1 stroke-text';
-                btn.innerHTML = `MAĞAZADA AÇ (${item.cost} 🪙)`;
+                btn.innerHTML = `MAĞAZADA AÇ (${item.cost.toLocaleString()} <i class="fa-solid fa-coins"></i>)`;
                 btn.className = 'btn-3d btn-yellow w-full py-2 font-io text-xs stroke-text-dark';
                 btn.onclick = () => {
                     openShopModal();
@@ -2507,7 +2509,7 @@
             if (cat === 'chests') {
                 statusEl.innerHTML = `FİYAT: ${item.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i>`;
                 statusEl.className = 'font-io text-xs text-[#FFDF73] block mb-1 stroke-text';
-                btn.innerHTML = `SATIN AL & AÇ (${item.cost} 🪙)`;
+                btn.innerHTML = `SATIN AL & AÇ (${item.cost.toLocaleString()} <i class="fa-solid fa-coins"></i>)`;
                 btn.className = 'btn-3d btn-red w-full py-2 font-io text-xs stroke-text';
                 btn.onclick = () => buyChestItem(item.id, item.cost);
                 redrawCosmeticPreviews();
@@ -2527,9 +2529,9 @@
                 btn.className = 'btn-3d btn-play w-full py-2 font-io text-xs stroke-text';
                 btn.onclick = () => equipCosmeticItem(item.id, cat);
             } else {
-                statusEl.innerHTML = `FİYAT: ${item.cost} 🪙`;
+                statusEl.innerHTML = `FİYAT: ${item.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i>`;
                 statusEl.className = 'font-io text-xs text-[#FFDF73] block mb-1 stroke-text';
-                btn.innerHTML = `SATIN AL (${item.cost} 🪙)`;
+                btn.innerHTML = `SATIN AL (${item.cost.toLocaleString()} <i class="fa-solid fa-coins"></i>)`;
                 btn.className = 'btn-3d btn-red w-full py-2 font-io text-xs stroke-text';
                 btn.onclick = () => buyShopItem(item.id, cat, item.cost);
             }
@@ -2565,7 +2567,7 @@
             return new Promise(resolve => {
                 const overlay = document.createElement('div');
                 overlay.className = 'fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm';
-                overlay.innerHTML = `<div class="panel-wood w-full max-w-[360px] p-4 text-center border-[4px] border-[#f2d184] rounded-2xl shadow-[0_0_35px_rgba(244,175,65,.4)]"><div class="font-io text-[#ffdf73] text-lg">${chest.name}</div><div class="text-white/80 text-xs mt-1">Sandığı açmak ve ödül spinini başlatmak istiyor musun?</div><div class="flex justify-center my-3"><canvas width="130" height="90" id="purchase-chest-canvas"></canvas></div><div class="font-io text-[#ffe39a] text-sm mb-3">${chest.cost.toLocaleString()} 🪙</div><div class="grid grid-cols-2 gap-2"><button id="purchase-chest-cancel" class="btn-3d btn-action py-2 font-io text-xs">İPTAL</button><button id="purchase-chest-accept" class="btn-3d btn-yellow py-2 font-io text-xs stroke-text-dark">AÇ VE SPİNİ BAŞLAT</button></div></div>`;
+                overlay.innerHTML = `<div class="panel-wood w-full max-w-[360px] p-4 text-center border-[4px] border-[#f2d184] rounded-2xl shadow-[0_0_35px_rgba(244,175,65,.4)]"><div class="font-io text-[#ffdf73] text-lg">${chest.name}</div><div class="text-white/80 text-xs mt-1">Sandığı açmak ve ödül spinini başlatmak istiyor musun?</div><div class="flex justify-center my-3"><canvas width="130" height="90" id="purchase-chest-canvas"></canvas></div><div class="font-io text-[#ffe39a] text-sm mb-3">${chest.cost.toLocaleString()} <i class="fa-solid fa-coins text-[#F7C02D]"></i></div><div class="grid grid-cols-2 gap-2"><button id="purchase-chest-cancel" class="btn-3d btn-action py-2 font-io text-xs">İPTAL</button><button id="purchase-chest-accept" class="btn-3d btn-yellow py-2 font-io text-xs stroke-text-dark">AÇ VE SPİNİ BAŞLAT</button></div></div>`;
                 document.body.appendChild(overlay);
                 drawChestIcon(overlay.querySelector('#purchase-chest-canvas').getContext('2d'), 65, 45, chest.rarity, .95, _animFrame);
                 const finish = result => { overlay.remove(); resolve(result); };
@@ -2650,7 +2652,7 @@
             }
 
             const item = (ALL_ITEMS_MAP[cat] || []).find(entry => entry.id === id);
-            const confirmed = window.confirm(`${item ? item.name : 'Eşya'} için ${cost} 🪙 ödeyip satın almak istiyor musun?`);
+            const confirmed = window.confirm(`${item ? item.name : 'Eşya'} için ${cost.toLocaleString()} coin ödeyip satın almak istiyor musun?`);
             if (!confirmed) {
                 triggerToast('Satın alma reddedildi.', 'fa-xmark');
                 return;
@@ -2755,7 +2757,7 @@
                 } else {
                     actionHtml = `
                         <div class="flex flex-col items-center justify-center bg-gradient-to-b from-[#fcd55c] to-[#e6a81e] border-2 border-[#3c1e08] rounded-xl px-2.5 py-1 min-w-[68px] shadow-[0_2px_0_#3c1e08]">
-                            <span class="font-io text-xs text-[#3c1e08] leading-none">+${q.rewardCoins} 🪙</span>
+                            <span class="font-io text-xs text-[#3c1e08] leading-none">+${q.rewardCoins} <i class="fa-solid fa-coins"></i></span>
                             <span class="font-io text-[10px] text-[#3c1e08] leading-none mt-0.5">+1 ⭐</span>
                         </div>
                     `;
@@ -2788,7 +2790,7 @@
             for (let i = 0; i < 12; i++) {
                 const particle = document.createElement('span');
                 particle.className = 'quest-reward-particle';
-                particle.textContent = i % 2 ? '⭐' : '🪙';
+                particle.innerHTML = i % 2 ? '⭐' : '<i class="fa-solid fa-coins"></i>';
                 particle.style.left = '50%';
                 particle.style.top = '50%';
                 particle.style.setProperty('--dx', `${Math.cos(i * Math.PI / 6) * (90 + Math.random() * 90)}px`);
@@ -3029,7 +3031,7 @@
             const name = document.getElementById('clan-name-input').value.trim();
             if (!tag || !name) { triggerToast('Klan tagı ve ismi gerekli', 'fa-triangle-exclamation'); return; }
             const gold = getPlayerGold();
-            if (gold < 500) { triggerToast('Klan açmak için 500 🪙 gerekli', 'fa-coins'); return; }
+            if (gold < 500) { triggerToast('Klan açmak için 500 coin gerekli', 'fa-coins'); return; }
             setPlayerGold(gold - 500);
             localStorage.setItem('fb_clan_id', tag);
             triggerToast(`[${tag}] ${name} Klanı Başarıyla Kuruldu!`, 'fa-shield-halved');
