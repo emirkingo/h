@@ -512,16 +512,19 @@ async function handleApi(request, response, requestPath) {
     if (authRateLimited(request, 'register')) { response.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '3600' }); response.end(JSON.stringify({ error: 'Çok fazla kayıt denemesi. Lütfen daha sonra tekrar deneyin.' })); return true; }
     const username = String(body.username || '').trim();
     const key = usernameKey(username);
+    const email = String(body.email || '').trim().toLowerCase();
     if (!/^[a-zA-Z0-9_ TürkÇĞİÖŞÜçğıöşü-]{3,20}$/.test(username)) { sendJson(response, 400, { error: 'Kullanıcı adı 3-20 karakter olmalı.' }); return true; }
     if (!body.password || String(body.password).length < 4) { sendJson(response, 400, { error: 'Şifre en az 4 karakter olmalı.' }); return true; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { sendJson(response, 400, { error: 'Geçerli bir e-posta adresi gerekli.' }); return true; }
     if (accountData.users[key]) { sendJson(response, 409, { error: 'Bu kullanıcı adı zaten kayıtlı.' }); return true; }
+    if (Object.values(accountData.users).some(user => String(user.email || '').trim().toLowerCase() === email)) { sendJson(response, 409, { error: 'Bu e-posta zaten kayıtlı.' }); return true; }
     const password = hashPassword(String(body.password));
     const initXp = Math.max(0, Math.min(50000, Number(body.initialXp) || 0));
     const initCoins = Math.max(1800, Number(body.initialGold || body.initialCoins || 1800));
     const user = {
       id: accountData.nextId++,
       username,
-      email: String(body.email || '').trim(),
+      email,
       ...password,
       rankId: rankInfo(initXp).rankId,
       xp: initXp,
@@ -547,7 +550,7 @@ async function handleApi(request, response, requestPath) {
   }
   if (requestPath === '/api/auth/login' && request.method === 'POST') {
     if (authRateLimited(request, 'login')) { response.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '600' }); response.end(JSON.stringify({ error: 'Çok fazla giriş denemesi. Lütfen 10 dakika sonra tekrar deneyin.' })); return true; }
-    const user = findUserForLogin(body.username);
+    const user = findUserForLogin(body.identifier || body.username);
     const password = String(body.password || '');
     const check = user && user.hash && user.salt && hashPassword(password, user.salt).hash;
     if (!user || !check || !crypto.timingSafeEqual(Buffer.from(check, 'hex'), Buffer.from(user.hash, 'hex'))) {

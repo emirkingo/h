@@ -838,11 +838,11 @@
             <div class="panel-inset p-4 sm:p-5 flex flex-col mt-1">
                 <p class="font-io text-sm text-[#F7C02D] stroke-text mb-4 text-center leading-tight">LOGIN TO YOUR ACCOUNT</p>
                 
-                <label class="text-white font-black text-xs mb-1">Username</label>
-                <input id="login-username" type="text" placeholder="Kullanıcı Adı" class="input-io w-full h-11 px-3 font-io text-base mb-3">
+                <label class="text-white font-black text-xs mb-1">E-posta veya Kullanıcı Adı</label>
+                <input id="login-username" type="text" autocomplete="username" placeholder="E-posta veya kullanıcı adı" class="input-io w-full h-11 px-3 font-io text-base mb-3" onkeydown="if(event.key === 'Enter') handleLogin()">
                 
                 <label class="text-white font-black text-xs mb-1">Password</label>
-                <input id="login-password" type="password" placeholder="Şifre" class="input-io w-full h-11 px-3 font-io text-base mb-4">
+                <input id="login-password" type="password" autocomplete="current-password" placeholder="Şifre" class="input-io w-full h-11 px-3 font-io text-base mb-4" onkeydown="if(event.key === 'Enter') handleLogin()">
                 
                 <button onclick="handleLogin()" class="btn-3d btn-yellow w-full py-2.5 font-io text-base tracking-wide stroke-text-dark border-[3px] mb-3">
                     LOGIN
@@ -850,7 +850,7 @@
                 
                 <div class="flex justify-center items-center gap-1.5 text-xs text-white/80">
                     <span>Hesabın yok mu?</span>
-                    <span onclick="openModal('registerModal'); playSfx('click')" class="text-[#F7C02D] font-bold cursor-pointer underline hover:text-white">Kayıt Ol (+300 🪙)</span>
+                    <span onclick="openModal('registerModal'); playSfx('click')" class="text-[#F7C02D] font-bold cursor-pointer underline hover:text-white">Kayıt Ol (+300 <i class="fa-solid fa-coins"></i>)</span>
                 </div>
             </div>
         </div>
@@ -876,11 +876,11 @@
                 <label class="text-white font-black text-xs mb-1">Password (en az 4 karakter)</label>
                 <input id="reg-password" type="password" placeholder="Şifre" class="input-io w-full h-11 px-3 font-io text-base mb-3">
 
-                <label class="text-white font-black text-xs mb-1">Email (İsteğe bağlı)</label>
-                <input id="reg-email" type="email" placeholder="ornek@mail.com" class="input-io w-full h-11 px-3 font-io text-base mb-4">
+                <label class="text-white font-black text-xs mb-1">E-posta (Giriş için gerekli)</label>
+                <input id="reg-email" type="email" autocomplete="email" required placeholder="ornek@mail.com" class="input-io w-full h-11 px-3 font-io text-base mb-4" onkeydown="if(event.key === 'Enter') handleRegister()">
                 
                 <button onclick="handleRegister()" class="btn-3d btn-red w-full py-2.5 font-io text-base tracking-wide stroke-text border-[3px] mb-3">
-                    CREATE ACCOUNT (+300 🪙)
+                    CREATE ACCOUNT (+300 <i class="fa-solid fa-coins"></i>)
                 </button>
                 
                 <div class="flex justify-center items-center gap-1.5 text-xs text-white/80">
@@ -1889,7 +1889,7 @@
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: u, password: p })
+                    body: JSON.stringify({ identifier: u, password: p })
                 });
                 const data = await res.json();
                 if (res.ok && data.token) {
@@ -1922,8 +1922,8 @@
             const u = document.getElementById('reg-username').value.trim();
             const p = document.getElementById('reg-password').value;
             const e = document.getElementById('reg-email').value.trim();
-            if (u.length < 3 || p.length < 4) {
-                triggerToast('Kullanıcı adı min 3, şifre min 4 karakter olmalı.', 'fa-triangle-exclamation');
+            if (u.length < 3 || p.length < 4 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+                triggerToast('Kullanıcı adı, geçerli e-posta ve en az 4 karakterli şifre gerekli.', 'fa-triangle-exclamation');
                 return;
             }
 
