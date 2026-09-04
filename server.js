@@ -1634,7 +1634,8 @@ io.on('connection', (socket) => {
       const dy = incomingY - prevY;
       const dist = Math.hypot(dx, dy);
       const worldLimit = 7200;
-      const maxAllowedDist = 320; // Allows bursts up to ~400ms lag without falsely freezing the player
+      const elapsedMs = Math.max(16, Math.min(1000, Date.now() - (player.stateAt || Date.now())));
+      const maxAllowedDist = 90 + elapsedMs * 0.9; // Lag allowance plus a bounded movement budget
       if (Math.abs(incomingX) > worldLimit || Math.abs(incomingY) > worldLimit) {
         acceptedX = Math.max(-worldLimit, Math.min(worldLimit, incomingX));
         acceptedY = Math.max(-worldLimit, Math.min(worldLimit, incomingY));
@@ -1666,7 +1667,7 @@ io.on('connection', (socket) => {
         player.trappedUntil = 0;
       }
     }
-    for (const key of ['x', 'y', 'angle', 'vx', 'vy', 'isAttacking', 'attackTimer', 'attackDuration', 'weapon', 'axeTier', 'swordTier', 'team', 'color', 'skin', 'acc', 'buildX', 'buildY', 'maxHp', 'score', 'sc', 'kills', 'gold', 'wood', 'stone', 'apples', 'xp', 'rankId']) {
+    for (const key of ['x', 'y', 'angle', 'vx', 'vy', 'isAttacking', 'attackTimer', 'attackDuration', 'weapon', 'axeTier', 'swordTier', 'team', 'color', 'skin', 'acc', 'buildX', 'buildY']) {
       if (key === 'x' && Number.isFinite(acceptedX)) player.x = acceptedX;
       else if (key === 'y' && Number.isFinite(acceptedY)) player.y = acceptedY;
       else if (data[key] !== undefined) player[key] = data[key];
@@ -1686,9 +1687,6 @@ io.on('connection', (socket) => {
         break;
       }
     }
-    const incomingScore = Number(data.score ?? data.sc ?? player.score ?? 0) || 0;
-    player.score = Math.max(player.score || 0, incomingScore);
-    if (typeof data.sc !== 'undefined') player.sc = Number(data.sc) || 0;
     if (incomingSeq !== null) player.stateSeq = incomingSeq;
     player.stateAt = Date.now();
 
@@ -1705,6 +1703,10 @@ io.on('connection', (socket) => {
     }
     if ((attacker.hp ?? 250) <= 0) attacker.hp = 250;
     const weapon = Number(data.weapon) === 2 ? 2 : 1;
+    const now = Date.now();
+    const swingCooldown = weapon === 2 ? 180 : 230;
+    if (now - (attacker.lastSwingAt || 0) < swingCooldown) return;
+    attacker.lastSwingAt = now;
     const range = weapon === 2 ? 140 : 128;
     const spread = weapon === 2 ? Math.PI / 3.25 : Math.PI / 2.57;
     const tier = Math.max(0, Math.min(5, Number(weapon === 2 ? data.swordTier : data.axeTier) || 0));
@@ -1935,7 +1937,7 @@ io.on('connection', (socket) => {
   });
   socket.on('ping_req', (data) => socket.emit('pong_res', typeof data === 'object' && data ? data : { t: data }));
   socket.on('player_dead', (data = {}) => {
-    const pid = data.id || socket.id;
+    const pid = socket.id;
     const player = players.get(pid);
     if (player) {
       recordDeathScore(player.name, player.score || player.gold, player.gold, player.kills, data.timeAlive || 0);
@@ -1944,7 +1946,7 @@ io.on('connection', (socket) => {
     relayToOthers(socket, 'player_dead', { id: pid });
   });
   socket.on('player_died', (data = {}) => {
-    const pid = data.id || socket.id;
+    const pid = socket.id;
     const player = players.get(pid);
     if (player) {
       recordDeathScore(player.name, player.score || player.gold, player.gold, player.kills, data.timeAlive || 0);
@@ -1969,10 +1971,17 @@ io.on('connection', (socket) => {
     }
     const now = Date.now();
     const hitKey = `${socket.id}:${mob.id}`;
-    if (now - (mobHitCooldowns.get(hitKey) || 0) < 40) return;
+    if (now - (mobHitCooldowns.get(hitKey) || 0) < 180) return;
     mobHitCooldowns.set(hitKey, now);
 
-    const dmg = Math.max(1, Math.min(180, Number(data.dmg) || 25));
+    if ((attacker.hp ?? 250) <= 0) return;
+    const distance = Math.hypot((Number(attacker.x) || 0) - mob.x, (Number(attacker.y) || 0) - mob.y);
+    const weapon = Number(attacker.weapon) === 2 ? 2 : 1;
+    const range = weapon === 2 ? 170 : 155;
+    if (distance > range + (mob.radius || 0)) return;
+    const tier = Math.max(0, Math.min(6, Number(weapon === 2 ? attacker.swordTier : attacker.axeTier) || 0));
+    const multiplier = [1, 1.5, 2.2, 3.5, 5, 8, 12][tier];
+    const dmg = Math.min(120, Math.round((weapon === 2 ? 30 : 22) * multiplier));
     mob.hp = Math.max(0, mob.hp - dmg);
     mob.targetId = socket.id;
     mob.chaseUntil = now + MOB_CHASE_TIMEOUT;
@@ -2049,6 +2058,12 @@ io.on('connection', (socket) => {
     }
   });
   socket.on('build_destroy', ({ id } = {}) => {
+    const building = buildings.get(id);
+    if (!building) return;
+    const player = players.get(socket.id);
+    const isOwner = building.ownerId === socket.id;
+    const isClanOwner = player?.clanId && building.ownerClanId === player.clanId && clans.get(player.clanId)?.ownerId === socket.id;
+    if (!isOwner && !isClanOwner) return;
     buildings.delete(id);
     io.emit('build_destroy', { id });
     io.emit('trap_freed', { buildingId: id });
